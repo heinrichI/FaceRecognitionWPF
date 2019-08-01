@@ -9,16 +9,19 @@ namespace FaceRecognitionWPF.KNN
 {
     class ClassInfo
     {
-        public ClassInfo(string directory)
+        public ClassInfo(string className, double[] data)
         {
-            Name = directory;
-            Data = new List<double>();
+            Name = className;
+            Data = data;
+            //Data = new List<double>();
             //Encodings = new List<FaceEncoding>();
         }
 
         public string Name { get; }
 
-        public List<double> Data { get; }
+        //public List<double> Data { get; }
+
+        public double[] Data { get; }
 
         //public List<FaceEncoding> Encodings { get; }
     }

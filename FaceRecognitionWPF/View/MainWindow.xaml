@@ -11,6 +11,11 @@
         <TextBox Text="{Binding ModelsDirectory}"></TextBox>
         <Label>Train path</Label>
         <TextBox Text="{Binding TrainPath}"></TextBox>
+        <Label>Search path</Label>
+        <TextBox Text="{Binding SearchPath}"></TextBox>
+        <Label>Search path</Label>
+        <Label>Distance threshold</Label>
+        <TextBox Text="{Binding DistanceThreshold}"></TextBox>
         <Button Command="{Binding RunCommand}">Run</Button>
     </StackPanel>
 </Window>

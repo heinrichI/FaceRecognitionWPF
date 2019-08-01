@@ -17,8 +17,8 @@ namespace FaceRecognitionWPF.KNN
             {
                 IndexAndDistance curr = new IndexAndDistance();
                 double dist = Distance(unknown, trainData[i]);
-                curr.idx = i;
-                curr.dist = dist;
+                curr.Index = i;
+                curr.Distance = dist;
                 info[i] = curr;
             }
 
@@ -27,9 +27,10 @@ namespace FaceRecognitionWPF.KNN
             Console.WriteLine("==============================");
             for (int i = 0; i < k; ++i)
             {
-                int c = (int)trainData[info[i].idx][2];
-                string dist = info[i].dist.ToString("F3");
-                Console.WriteLine("( " + trainData[info[i].idx][0] + "," + trainData[info[i].idx][1] + " )  :  " + dist + "        " + c);
+                int classIndex = (int)trainData[info[i].Index][2];
+                string dist = info[i].Distance.ToString("F3");
+                Console.WriteLine("( " + trainData[info[i].Index][0] + "," + trainData[info[i].Index][1] + " )  :  " 
+                    + dist + "        " + classIndex);
             }
 
             int result = Vote(info, trainData, numClasses, k);  // k nearest classes
@@ -50,7 +51,7 @@ namespace FaceRecognitionWPF.KNN
             int[] votes = new int[numClasses];  // one cell per class
             for (int i = 0; i < k; ++i)  // just first k nearest
             {
-                int idx = info[i].idx;  // which item
+                int idx = info[i].Index;  // which item
                 int c = (int)trainData[idx][2];  // class in last cell
                 ++votes[c];
             }

@@ -16,8 +16,10 @@ namespace FaceRecognitionWPF.ViewModel
     {
         public MainViewModel()
         {
-            TrainPath = @"d:\tmp\TrainFace";
+            TrainPath = @"d:\Борисов\WallpapersSort\TrainFace";
+            SearchPath = @"d:\Борисов\WallpapersSort\body";
             ModelsDirectory = @"d:\face_recognition_models";
+            DistanceThreshold = 0.6;
         }
 
         string _trainPath;
@@ -31,6 +33,17 @@ namespace FaceRecognitionWPF.ViewModel
             }
         }
 
+        string _searchPath;
+        public string SearchPath
+        {
+            get => this._searchPath;
+            set
+            {
+                this._searchPath = value;
+                this.RaisePropertyChangedEvent("SearchPath");
+            }
+        }
+
         string _modelsDirectory;
         public string ModelsDirectory
         {
@@ -39,6 +52,18 @@ namespace FaceRecognitionWPF.ViewModel
             {
                 this._modelsDirectory = value;
                 this.RaisePropertyChangedEvent("ModelsDirectory");
+            }
+        }
+
+        
+        double _distanceThreshold;
+        public double DistanceThreshold
+        {
+            get => this._distanceThreshold;
+            set
+            {
+                this._distanceThreshold = value;
+                this.RaisePropertyChangedEvent("DistanceThreshold");
             }
         }
 
@@ -65,13 +90,19 @@ namespace FaceRecognitionWPF.ViewModel
 
                     await Task.Run(() =>
                     {
+                        System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+                        DlibDotNet.Dlib.Encoding = System.Text.Encoding.GetEncoding(1251);
+
                         using (var faceRecognition = FaceRecognition.Create(ModelsDirectory))
                         {
                             var directories = System.IO.Directory.GetDirectories(TrainPath);
+                            var classes = directories.Select(d => new DirectoryInfo(d).Name);
 
+                            List<ClassInfo> trainedInfo = new List<ClassInfo>();
                             foreach (var directory in directories)
                             {
-                                ClassInfo ci = new ClassInfo(directory);
+                                //ClassInfo ci = new ClassInfo(directory);
+                                //trainedInfo.Add(ci);
 
                                 var files = System.IO.Directory.GetFiles(directory);
 
@@ -94,8 +125,9 @@ namespace FaceRecognitionWPF.ViewModel
                                             encoding.GetObjectData(info, context);
 
                                             double[] doubleInfo = (double[])info.GetValue("_Encoding", typeof(double[]));
-                                            ci.Data.AddRange(doubleInfo);
-                                            //encoding.Dispose();
+                                            //ci.Data.AddRange(doubleInfo);
+                                            trainedInfo.Add(new ClassInfo(new DirectoryInfo(directory).Name, doubleInfo));
+                                            encoding.Dispose();
                                         }
 
                                         //sw.Stop();
@@ -127,13 +159,50 @@ namespace FaceRecognitionWPF.ViewModel
                                     //}
                                 }
 
-                                
+
                             }
 
-                            int predicted = KNN.KNN.Classify(unknown, trainData, numClasses, k);
+                            var searchFiles = System.IO.Directory.GetFiles(SearchPath);
+
+                            foreach (var imageFile in searchFiles)
+                            {
+                                using (var ms = new MemoryStream(File.ReadAllBytes(imageFile)))
+                                using (var unknownImage = FaceRecognition.LoadImageFile(imageFile))
+                                //using (var unknownImage = FaceRecognition.LoadImage(ms))
+                                {
+                                    var encodings = faceRecognition.FaceEncodings(unknownImage);
+                                    if (encodings == null)
+                                        continue;
+
+                                    foreach (var encoding in encodings)
+                                    {
+                                        IFormatterConverter formatterConverter = new FormatterConverter();
+                                        var info = new SerializationInfo(typeof(double), formatterConverter);
+                                        StreamingContext context = new StreamingContext();
+                                        encoding.GetObjectData(info, context);
+
+                                        double[] unknown = (double[])info.GetValue("_Encoding", typeof(double[]));
+                                        VoteAndDistance predict = MyKnn.Classify(unknown, trainedInfo, classes.ToArray(), 1);
+                                        encoding.Dispose();
+                                        if (predict.Distance > DistanceThreshold)
+                                            Debug.WriteLine($"Found {predict.Name} in {imageFile} with {predict.Distance} distance");
+                                    }
+
+                                    //int predicted = KNN.KNN.Classify(unknown, trainData, numClasses, k);
+
+                                }
+                            }
                             // FaceRecognition.CompareFaces()
                         }
-                    });
+                    })
+                    .ContinueWith(c =>
+                    {
+                        AggregateException exception = c.Exception;
+
+                        System.Windows.MessageBox.Show($"{exception.Message} \n {exception.StackTrace}",
+                            "Uncaught Thread Exception", System.Windows.MessageBoxButton.OK,
+                            System.Windows.MessageBoxImage.Error);
+                    }, TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously);
                 }, (arg) => true));
             }
         }
