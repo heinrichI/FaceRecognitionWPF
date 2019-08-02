@@ -6,16 +6,85 @@
         xmlns:local="clr-namespace:FaceRecognitionWPF.View"
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
-    <StackPanel>
-        <Label>Models directory</Label>
-        <TextBox Text="{Binding ModelsDirectory}"></TextBox>
-        <Label>Train path</Label>
-        <TextBox Text="{Binding TrainPath}"></TextBox>
-        <Label>Search path</Label>
-        <TextBox Text="{Binding SearchPath}"></TextBox>
-        <Label>Search path</Label>
-        <Label>Distance threshold</Label>
-        <TextBox Text="{Binding DistanceThreshold}"></TextBox>
-        <Button Command="{Binding RunCommand}">Run</Button>
-    </StackPanel>
+    <Grid >
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="0.4*"/>
+            <ColumnDefinition Width="0.6*"/>
+        </Grid.ColumnDefinitions>
+
+        <FrameworkElement x:Name="dummyElement" Visibility="Collapsed"/>
+
+
+        <StackPanel Grid.Column="0">
+            <Label>Models directory</Label>
+            <TextBox Text="{Binding ModelsDirectory}"></TextBox>
+            <Label>Train path</Label>
+            <TextBox Text="{Binding TrainPath}"></TextBox>
+            <Label>Search path</Label>
+            <TextBox Text="{Binding SearchPath}"></TextBox>
+            <Label>Search path</Label>
+            <Label>Distance threshold</Label>
+            <TextBox Text="{Binding DistanceThreshold}"></TextBox>
+            <Button Command="{Binding RunCommand}">Run</Button>
+            <Viewbox Grid.Row="0" Stretch="Uniform">
+                <Image Source="{Binding Image, Mode=OneWay}"/>
+            </Viewbox>
+        </StackPanel>
+
+        <DataGrid Grid.Column="1"
+            ItemsSource="{Binding DirectoriesWithFaces}" 
+                      AutoGenerateColumns="False"
+                      CanUserAddRows="False"
+                      IsSynchronizedWithCurrentItem="True"
+                      >
+
+
+            <DataGrid.Columns>
+                <DataGridTemplateColumn Header="Image" MinWidth="150"
+                                                Width="*">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Vertical" >
+                                <Label Content="{Binding Name, Mode=OneWay}" ></Label>
+                                <ListView ItemsSource="{Binding Faces}" 
+                                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                    <ListView.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel Width="{Binding (FrameworkElement.ActualWidth), 
+                                                        RelativeSource={RelativeSource AncestorType=ScrollContentPresenter}}"
+                                                        ItemWidth="{Binding (ListView.View).ItemWidth, 
+                                                        RelativeSource={RelativeSource AncestorType=ListView}}"
+                                                        ItemHeight="{Binding (ListView.View).ItemHeight, 
+                                                        RelativeSource={RelativeSource AncestorType=ListView}}"/>
+                                        </ItemsPanelTemplate>
+                                    </ListView.ItemsPanel>
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Vertical" 
+                                                                Width="{Binding DataContext.ThumbnailWidth, Source={x:Reference dummyElement}}">
+                                                <Image Height="{Binding DataContext.ThumbnailWidth, Source={x:Reference dummyElement}}"
+                                                               Source="{Binding Image, Mode=OneWay}" 
+                                                               Stretch="Uniform" >
+                                                    <Image.InputBindings>
+                                                        <MouseBinding MouseAction="LeftDoubleClick"
+                                                                  Command="{Binding DataContext.OpenImageCommand, Source={x:Reference dummyElement}}"
+                                                                  CommandParameter="{Binding Path}" />
+                                                    </Image.InputBindings>
+                                                </Image>
+                                                <TextBox Text="{Binding Path, Mode=OneWay}" 
+                                                                 ToolTip="{Binding Path, Mode=OneWay}" 
+                                                                 IsReadOnly="True"  />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListView>
+
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+            </DataGrid.Columns>
+        </DataGrid>
+       </Grid>
 </Window>

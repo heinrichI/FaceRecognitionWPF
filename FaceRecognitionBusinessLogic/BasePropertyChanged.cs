@@ -2,10 +2,11 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FaceRecognitionWPF
+namespace FaceRecognitionBusinessLogic
 {
     public class BasePropertyChanged : INotifyPropertyChanged, INotifyPropertyChanging
     {
@@ -41,6 +42,11 @@ namespace FaceRecognitionWPF
             // Raise event
             var e = new PropertyChangingEventArgs(propertyName);
             PropertyChanging(this, e);
+        }
+
+        public void OnPropertyChanged([CallerMemberName] string propertyName = "")
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
 

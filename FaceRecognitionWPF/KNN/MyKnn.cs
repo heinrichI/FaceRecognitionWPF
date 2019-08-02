@@ -17,14 +17,23 @@ namespace FaceRecognitionWPF.KNN
             // compute and store distances from unknown to all train data 
             int totalDataItems = trainData.Count;  // number data items
             IndexAndDistance[] info = new IndexAndDistance[totalDataItems];
-            for (int i = 0; i < totalDataItems; ++i)
+            //for (int i = 0; i < totalDataItems; ++i)
+            //{
+            //    IndexAndDistance curr = new IndexAndDistance();
+            //    double dist = Distance(unknown, trainData[i].Data);
+            //    curr.Index = i;
+            //    curr.Distance = dist;
+            //    info[i] = curr;
+            //}
+            // For every test sample, calculate distance from every training sample
+            Parallel.For(0, totalDataItems, i =>
             {
                 IndexAndDistance curr = new IndexAndDistance();
                 double dist = Distance(unknown, trainData[i].Data);
                 curr.Index = i;
                 curr.Distance = dist;
                 info[i] = curr;
-            }
+            });
 
             Array.Sort(info);  // sort by distance
             //Debug.WriteLine("\nDistance  / Class");
@@ -44,8 +53,8 @@ namespace FaceRecognitionWPF.KNN
             double sum = 0.0;
             for (int i = 0; i < unknown.Length; ++i)
                 sum += (unknown[i] - data[i]) * (unknown[i] - data[i]);
-            //return Math.Sqrt(sum);
-            return sum;
+            return Math.Sqrt(sum);
+           //return sum;
         }
 
         static VoteAndDistance Vote(IndexAndDistance[] info, List<ClassInfo> trainData, string[] classes, int k)
