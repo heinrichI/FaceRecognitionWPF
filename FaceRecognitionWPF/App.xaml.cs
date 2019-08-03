@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FaceRecognitionWPF.View;
+using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
@@ -39,11 +40,14 @@ namespace FaceRecognitionWPF
             //UndoRedoEngine undoRedoEngine = new UndoRedoEngine();
             //TinyIoCContainer.Current.Register<IUndoRedoEngine, UndoRedoEngine>(undoRedoEngine);
 
+            var shell = new View.MainWindow();
+            WindowService windowService = new WindowService(shell);
+
             //var model = new MainModel();
             //DllModel model = DllModel.LoadSetting();
-            var viewModel = new ViewModel.MainViewModel();
+            var viewModel = new ViewModel.MainViewModel(windowService);
 
-            var shell = new View.MainWindow();
+
             shell.DataContext = viewModel;
 
             shell.Closing += new System.ComponentModel.CancelEventHandler(viewModel.OnClosing);

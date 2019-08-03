@@ -80,7 +80,12 @@
     <Compile Include="KNN\MyKnn.cs" />
     <Compile Include="KNN\VoteAndDistance.cs" />
     <Compile Include="RelayCommand.cs" />
+    <Compile Include="ViewModel\FaceViewModel.cs" />
+    <Compile Include="ViewModel\IClosingViewModel.cs" />
     <Compile Include="ViewModel\MainViewModel.cs" />
+    <Compile Include="View\FaceWindow.xaml.cs">
+      <DependentUpon>FaceWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="View\MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
     </Compile>
@@ -88,6 +93,11 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="View\WindowService.cs" />
+    <Page Include="View\FaceWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="View\MainWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

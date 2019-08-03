@@ -26,8 +26,8 @@
             <Label>Distance threshold</Label>
             <TextBox Text="{Binding DistanceThreshold}"></TextBox>
             <Button Command="{Binding RunCommand}">Run</Button>
-            <Viewbox Grid.Row="0" Stretch="Uniform">
-                <Image Source="{Binding Image, Mode=OneWay}"/>
+            <Viewbox Grid.Row="0" Stretch="Fill">
+                <Image Source="{Binding ErrorImage, Mode=OneWay}"/>
             </Viewbox>
         </StackPanel>
 

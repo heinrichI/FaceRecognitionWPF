@@ -5,6 +5,7 @@ using FaceRecognitionBusinessLogic.DataBase;
 using FaceRecognitionBusinessLogic.ObjectModel;
 using FaceRecognitionDotNet;
 using FaceRecognitionWPF.KNN;
+using FaceRecognitionWPF.View;
 using LiteDB;
 using System;
 using System.Collections.Generic;
@@ -26,15 +27,19 @@ namespace FaceRecognitionWPF.ViewModel
 {
     class MainViewModel : BasePropertyChanged
     {
-        public MainViewModel()
+        public MainViewModel(View.WindowService windowService)
         {
-            TrainPath = @"d:\Борисов\WallpapersSort\TrainFace";
-            SearchPath = @"d:\Борисов\WallpapersSort\body";
-            ModelsDirectory = @"d:\face_recognition_models";
+            _windowService = windowService;
+
+            TrainPath = @"c:\FaceTrain";
+            SearchPath = @"d:\Downloads3\body";
+            ModelsDirectory = @"h:\Face Recognition\models";
             DistanceThreshold = 0.6;
 
             DirectoriesWithFaces = new ObservableCollection<DirectoryWithFaces>();
         }
+
+        View.WindowService _windowService;
 
         string _trainPath;
         public string TrainPath
@@ -119,6 +124,16 @@ namespace FaceRecognitionWPF.ViewModel
         }
 
 
+        ImageSource _errorImage;
+        public ImageSource ErrorImage
+        {
+            get => this._errorImage;
+            set
+            {
+                this._errorImage = value;
+                this.OnPropertyChanged();
+            }
+        }
 
 
         private RelayCommand _runCommand;
@@ -160,7 +175,7 @@ namespace FaceRecognitionWPF.ViewModel
                                     var faceCollection = db.GetCollection<FaceEncodingInfo>("FaceEncodingInfo");
                                     faceCollection.EnsureIndex(x => x.Path);
 
-                                    FaceEncodingInfo founded = faceCollection.FindById(imageFile);
+                                    FaceEncodingInfo founded = GetFromDB(faceCollection, imageFile);
                                     if (founded == null)
                                     {
                                         using (var image = FaceRecognition.LoadImageFile(imageFile))
@@ -169,17 +184,37 @@ namespace FaceRecognitionWPF.ViewModel
                                             //var sw = new Stopwatch();
                                             //sw.Start();
 
-                                            var faceBoundingBoxes = faceRecognition.FaceLocations(image);
+                                            var faceBoundingBoxes = faceRecognition.FaceLocations(image, 1, Model.Hog);
 
-                                            var location = faceBoundingBoxes.First();
                                             //Bitmap source = new Bitmap(imageFile);
                                             //Bitmap croppedImage = source.Clone(
                                             //    new System.Drawing.Rectangle(location.Left, location.Top,
                                             //    location.Right - location.Left, location.Bottom - location.Top), source.PixelFormat);
 
-                                            if (faceBoundingBoxes.Count() > 1)
+                                            var countOfFace = faceBoundingBoxes.Count();
+                                            if (countOfFace == 0)
+                                            {
+                                                Application.Current.Dispatcher.Invoke(() =>
+                                                {
+                                                    FaceViewModel vm = new FaceViewModel(imageFile);
+                                                    _windowService.ShowDialogWindow<FaceWindow>(vm);
+                                                });
+                                                continue;
+                                                //throw new Exception($"Not founded face in {imageFile}");
+                                            }
+
+                                            if (countOfFace > 1)
+                                            {
+                                                Application.Current.Dispatcher.Invoke(() =>
+                                                {
+                                                    FaceViewModel vm = new FaceViewModel(faceBoundingBoxes, imageFile);
+                                                    _windowService.ShowDialogWindow<FaceWindow>(vm);
+                                                });
+
+                                                continue;
                                                 //If there are no people (or too many people) in a training image, skip the image.
-                                                throw new Exception($"Faces > 1 in {imageFile}");
+                                                //throw new Exception($"Faces {countOfFace} > 1 in {imageFile}");
+                                            }
                                             //print("Image {} not suitable for training: {}".format(img_path, "Didn't find a face" if len(face_bounding_boxes) < 1 else "Found more than one face"))
                                             else
                                             {
@@ -204,7 +239,7 @@ namespace FaceRecognitionWPF.ViewModel
                                                     faceEncodingInfo.FingerPrints.Add(doubleInfo);
                                                     try
                                                     {
-                                                        faceCollection.Insert(faceEncodingInfo);
+                                                        faceCollection.Upsert(faceEncodingInfo);
                                                     }
                                                     catch (Exception ex)
                                                     {
@@ -318,13 +353,13 @@ namespace FaceRecognitionWPF.ViewModel
                                                             DirectoriesWithFaces.Add(dirWithFaces);
                                                         }
 
-                                                        var image = dirWithFaces.Images.SingleOrDefault(im => im.Path == imageFile);
-                                                        if (image == null)
-                                                        {
-                                                            image = new ImageInfo(imageFile);
-                                                            dirWithFaces.Images.Add(image);
-                                                        }
-                                                        image.Faces.Add(new FaceInfo()
+                                                        //var image = dirWithFaces.Images.SingleOrDefault(im => im.Path == imageFile);
+                                                        //if (image == null)
+                                                        //{
+                                                        //    image = new ImageInfo(imageFile);
+                                                        //    dirWithFaces.Images.Add(image);
+                                                        //}
+                                                        dirWithFaces.Faces.Add(new FaceInfo()
                                                         {
                                                             Image = cropped,
                                                             Path = imageFile,
@@ -381,5 +416,17 @@ namespace FaceRecognitionWPF.ViewModel
             }, (arg) => true));
             }
 }
+
+        private FaceEncodingInfo GetFromDB(LiteCollection<FaceEncodingInfo> faceCollection, string imageFile)
+        {
+            var info = faceCollection.FindById(imageFile);
+            if (info != null)
+            {
+                var fi = new FileInfo(imageFile);
+                if (fi.LastWriteTime == info.LastWriteTime && fi.Length == info.Length)
+                    return info;
+            }
+            return null;
+        }
     }
 }
