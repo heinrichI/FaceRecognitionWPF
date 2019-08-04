@@ -423,8 +423,13 @@ namespace FaceRecognitionWPF.ViewModel
             if (info != null)
             {
                 var fi = new FileInfo(imageFile);
-                if (fi.LastWriteTime == info.LastWriteTime && fi.Length == info.Length)
+                //Debug.WriteLine(fi.LastWriteTime.Ticks);
+                if (fi.LastWriteTime.ToLongTimeString() == info.LastWriteTime.ToLongTimeString()
+                    && fi.LastWriteTime.ToLongDateString() == info.LastWriteTime.ToLongDateString()
+                    && fi.Length == info.Length)
                     return info;
+                else
+                    Debug.WriteLine($"Не совпадает LastWriteTime Length {imageFile}");
             }
             return null;
         }

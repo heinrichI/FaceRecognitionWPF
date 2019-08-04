@@ -31,7 +31,10 @@
             </Viewbox>
         </StackPanel>
 
-        <DataGrid Grid.Column="1"
+        <ScrollViewer Grid.Column="1">
+            
+
+        <DataGrid 
             ItemsSource="{Binding DirectoriesWithFaces}" 
                       AutoGenerateColumns="False"
                       CanUserAddRows="False"
@@ -71,8 +74,8 @@
                                                                   CommandParameter="{Binding Path}" />
                                                     </Image.InputBindings>
                                                 </Image>
-                                                <TextBox Text="{Binding Path, Mode=OneWay}" 
-                                                                 ToolTip="{Binding Path, Mode=OneWay}" 
+                                                <TextBox Text="{Binding Predict, Mode=OneWay}" 
+                                                                 ToolTip="{Binding Predict, Mode=OneWay}" 
                                                                  IsReadOnly="True"  />
                                             </StackPanel>
                                         </DataTemplate>
@@ -86,5 +89,6 @@
 
             </DataGrid.Columns>
         </DataGrid>
-       </Grid>
+        </ScrollViewer>
+    </Grid>
 </Window>
