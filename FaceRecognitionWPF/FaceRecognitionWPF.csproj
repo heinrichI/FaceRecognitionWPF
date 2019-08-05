@@ -44,9 +44,6 @@
     <Reference Include="FaceRecognitionDotNet">
       <HintPath>..\Lib\FaceRecognitionDotNet.dll</HintPath>
     </Reference>
-    <Reference Include="LiteDB">
-      <HintPath>..\Lib\LiteDB.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
@@ -134,6 +131,10 @@
     <ProjectReference Include="..\FaceRecognitionBusinessLogic\FaceRecognitionBusinessLogic.csproj">
       <Project>{9f0770ff-b506-476d-aa96-166d9961424d}</Project>
       <Name>FaceRecognitionBusinessLogic</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\FaceRecognitionDataBase\FaceRecognitionDataBase.csproj">
+      <Project>{17e5fa1c-8bb7-4590-b366-7b7f2b2243f8}</Project>
+      <Name>FaceRecognitionDataBase</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -11,7 +11,7 @@ namespace FaceRecognitionBusinessLogic.DataBase
     {
         public FaceEncodingInfo()
         {
-            FingerPrints = new List<double[]>();
+            FingerAndLocations = new List<FingerAndLocation>();
         }
 
         public FaceEncodingInfo(string path) : this()
@@ -30,8 +30,8 @@ namespace FaceRecognitionBusinessLogic.DataBase
 
         public DateTime LastWriteTime { get; set; }
 
-        public List<double[]> FingerPrints { get; set; }
+        public List<FingerAndLocation> FingerAndLocations { get; set; }
 
-
+        public List<string> NotPerson { get; set; }
     }
 }

@@ -1,4 +1,6 @@
-﻿using FaceRecognitionWPF.View;
+﻿using FaceRecognitionBusinessLogic.DataBase;
+using FaceRecognitionDataBase;
+using FaceRecognitionWPF.View;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
@@ -39,6 +41,8 @@ namespace FaceRecognitionWPF
 
             //UndoRedoEngine undoRedoEngine = new UndoRedoEngine();
             //TinyIoCContainer.Current.Register<IUndoRedoEngine, UndoRedoEngine>(undoRedoEngine);
+
+            TinyIoC.TinyIoCContainer.Current.Register<IDataBaseManager, DataBaseManager>().AsSingleton();
 
             var shell = new View.MainWindow();
             WindowService windowService = new WindowService(shell);
