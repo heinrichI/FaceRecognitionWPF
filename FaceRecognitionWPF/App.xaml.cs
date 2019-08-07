@@ -42,7 +42,7 @@ namespace FaceRecognitionWPF
             //UndoRedoEngine undoRedoEngine = new UndoRedoEngine();
             //TinyIoCContainer.Current.Register<IUndoRedoEngine, UndoRedoEngine>(undoRedoEngine);
 
-            TinyIoC.TinyIoCContainer.Current.Register<IDataBaseManager, DataBaseManager>().AsSingleton();
+            TinyIoC.TinyIoCContainer.Current.Register<IDataBaseManager, DataBaseManager>().AsMultiInstance();
 
             var shell = new View.MainWindow();
             WindowService windowService = new WindowService(shell);
@@ -62,7 +62,7 @@ namespace FaceRecognitionWPF
 
         void Current_DispatcherUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
         {
-            MessageBox.Show($"{e.Exception.Message} \n {e.Exception.StackTrace}", "Uncaught Thread Exception",
+            MessageBox.Show($"{e.Exception.Message} \n {e.Exception.StackTrace} \n {e.Exception?.InnerException?.Message}", "Uncaught Thread Exception",
                             MessageBoxButton.OK, MessageBoxImage.Error);
         }
 

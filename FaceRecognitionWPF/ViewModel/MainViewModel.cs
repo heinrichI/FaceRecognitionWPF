@@ -21,6 +21,7 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using TinyIoC;
 
 namespace FaceRecognitionWPF.ViewModel
 {
@@ -151,7 +152,8 @@ namespace FaceRecognitionWPF.ViewModel
                         StreamingContext context = new StreamingContext();
 
 
-                        using (var db = TinyIoC.TinyIoCContainer.Current.Resolve<IDataBaseManager>("faces.litedb"))
+                        using (var db = TinyIoC.TinyIoCContainer.Current.Resolve<IDataBaseManager>(
+                            new NamedParameterOverloads() { { "dataBaseName", "faces.litedb" } }                           ))
                         {
                             using (var faceRecognition = FaceRecognition.Create(ModelsDirectory))
                             {
@@ -226,8 +228,7 @@ namespace FaceRecognitionWPF.ViewModel
                                                         encoding.Dispose();
 
 
-                                                        db.AddFaceInfo(imageFile, doubleInfo, faceBoundingBoxes.Single(),
-                                                            faceBoundingBoxes.Single().Left, faceBoundingBoxes.Single().Right,
+                                                        db.AddFaceInfo(imageFile, doubleInfo, faceBoundingBoxes.Single().Left, faceBoundingBoxes.Single().Right,
                                                             faceBoundingBoxes.Single().Top, faceBoundingBoxes.Single().Bottom);
                                                        
 
@@ -245,7 +246,8 @@ namespace FaceRecognitionWPF.ViewModel
                                         else
                                         {
                                             Debug.WriteLine($"File {imageFile} in db");
-                                            trainedInfo.Add(new ClassInfo(new DirectoryInfo(directory).Name, founded.FingerPrints[0]));
+                                            trainedInfo.Add(new ClassInfo(new DirectoryInfo(directory).Name, 
+                                                founded.FingerAndLocations.Single().FingerPrint));
                                         }
 
                                         //using (var faceDetector = Dlib.GetFrontalFaceDetector())
@@ -279,109 +281,167 @@ namespace FaceRecognitionWPF.ViewModel
                                 {
                                     //load image
                                     //using (var ms = new MemoryStream(File.ReadAllBytes(imageFile3)))
-                                    using (var unknownImage = FaceRecognition.LoadImageFile(imageFile))
-                                    //using (var unknownImage = FaceRecognition.LoadImage(ms))
+                                    FaceEncodingInfo founded = db.GetFromDB(imageFile);
+                                    if (founded == null)
                                     {
-                                        Debug.WriteLine($"Read {imageFile}");
-                                        //find face locations
-                                        var locations = faceRecognition.FaceLocations(unknownImage);
-                                        //# If no faces are found in the image, return an empty result.
-                                        if (!locations.Any())
+                                        using (var unknownImage = FaceRecognition.LoadImageFile(imageFile))
+                                        //using (var unknownImage = FaceRecognition.LoadImage(ms))
                                         {
-                                            Debug.WriteLine($"In {imageFile} not found faces");
-                                            continue;
-                                        }
-
-                                        foreach (var location in locations)
-                                        {
-                                            var encodings = faceRecognition.FaceEncodings(unknownImage, locations);
-                                            if (encodings == null)
-                                                continue;
-
-                                            foreach (var encoding in encodings)
+                                            Debug.WriteLine($"Read {imageFile}");
+                                            //find face locations
+                                            var locations = faceRecognition.FaceLocations(unknownImage);
+                                            //# If no faces are found in the image, return an empty result.
+                                            if (!locations.Any())
                                             {
-                                                var info = new SerializationInfo(typeof(double), formatterConverter);
-                                                encoding.GetObjectData(info, context);
+                                                Debug.WriteLine($"In {imageFile} not found faces");
+                                                continue;
+                                            }
 
-                                                double[] unknown = (double[])info.GetValue("_Encoding", typeof(double[]));
-                                                VoteAndDistance predict = MyKnn.Classify(unknown, trainedInfo, classes.ToArray(), 1);
-                                                encoding.Dispose();
-                                                if (predict.Distance < DistanceThreshold)
+                                            foreach (var location in locations)
+                                            {
+                                                var encodings = faceRecognition.FaceEncodings(unknownImage, locations);
+                                                if (encodings == null)
+                                                    continue;
+
+                                                foreach (var encoding in encodings)
                                                 {
-                                                    Debug.WriteLine($"Found {predict.Name} in {imageFile} with {predict.Distance} distance");
+                                                    var info = new SerializationInfo(typeof(double), formatterConverter);
+                                                    encoding.GetObjectData(info, context);
+                                                    encoding.Dispose();
 
-                                                    //this.Invoke(new Action(() =>
-                                                    Application.Current.Dispatcher.Invoke(() =>
+                                                    double[] unknown = (double[])info.GetValue("_Encoding", typeof(double[]));
+                                                    db.AddFaceInfo(imageFile, unknown, location.Left, location.Right,
+                                                        location.Top, location.Bottom);
+
+                                                    VoteAndDistance predict = MyKnn.Classify(unknown, trainedInfo, classes.ToArray(), 1);
+
+                                                    if (predict.Distance < DistanceThreshold)
                                                     {
-                                                    //Image = new BitmapImage(croppedImage);
-                                                    try
+                                                        Debug.WriteLine($"Found {predict.Name} in {imageFile} with {predict.Distance} distance");
+
+                                                        //this.Invoke(new Action(() =>
+                                                        Application.Current.Dispatcher.Invoke(() =>
                                                         {
-                                                            BitmapImage src = new BitmapImage();
-                                                            src.BeginInit();
-                                                            src.UriSource = new Uri(imageFile, UriKind.Relative);
-                                                            src.CacheOption = BitmapCacheOption.OnLoad;
-                                                            src.EndInit();
-                                                        //if (src.CanFreeze)
-                                                        //    src.Freeze();
-                                                        CroppedBitmap cropped = new CroppedBitmap(src, new Int32Rect(location.Left, location.Top,
-                                                                location.Right - location.Left, location.Bottom - location.Top));
-
-                                                        //this.Image = cropped;
-
-                                                        string directory = Path.GetDirectoryName(imageFile);
-                                                            var dirWithFaces = DirectoriesWithFaces
-                                                                .SingleOrDefault(dir => dir.Name == directory);
-                                                            if (dirWithFaces == null)
+                                                            //Image = new BitmapImage(croppedImage);
+                                                            try
                                                             {
-                                                                dirWithFaces = new DirectoryWithFaces(directory);
-                                                                DirectoriesWithFaces.Add(dirWithFaces);
+                                                                BitmapImage src = new BitmapImage();
+                                                                src.BeginInit();
+                                                                src.UriSource = new Uri(imageFile, UriKind.Relative);
+                                                                src.CacheOption = BitmapCacheOption.OnLoad;
+                                                                src.EndInit();
+                                                                //if (src.CanFreeze)
+                                                                //    src.Freeze();
+                                                                CroppedBitmap cropped = new CroppedBitmap(src, new Int32Rect(location.Left, location.Top,
+                                                                        location.Right - location.Left, location.Bottom - location.Top));
+
+                                                                //this.Image = cropped;
+
+                                                                string directory = Path.GetDirectoryName(imageFile);
+                                                                var dirWithFaces = DirectoriesWithFaces
+                                                                    .SingleOrDefault(dir => dir.Name == directory);
+                                                                if (dirWithFaces == null)
+                                                                {
+                                                                    dirWithFaces = new DirectoryWithFaces(directory);
+                                                                    DirectoriesWithFaces.Add(dirWithFaces);
+                                                                }
+
+                                                                //var image = dirWithFaces.Images.SingleOrDefault(im => im.Path == imageFile);
+                                                                //if (image == null)
+                                                                //{
+                                                                //    image = new ImageInfo(imageFile);
+                                                                //    dirWithFaces.Images.Add(image);
+                                                                //}
+                                                                dirWithFaces.Faces.Add(new FaceInfo()
+                                                                {
+                                                                    Image = cropped,
+                                                                    Path = imageFile,
+                                                                    Predict = predict.Name
+                                                                });
+                                                            }
+                                                            catch (Exception ex)
+                                                            {
+
+                                                                throw;
                                                             }
 
-                                                        //var image = dirWithFaces.Images.SingleOrDefault(im => im.Path == imageFile);
-                                                        //if (image == null)
+                                                        });
+
+                                                        //using (var data = new MemoryStream(File.ReadAllBytes(imageFile)))
                                                         //{
-                                                        //    image = new ImageInfo(imageFile);
-                                                        //    dirWithFaces.Images.Add(image);
-                                                        //}
-                                                        dirWithFaces.Faces.Add(new FaceInfo()
-                                                            {
-                                                                Image = cropped,
-                                                                Path = imageFile,
-                                                                Predict = predict.Name
-                                                            });
-                                                        }
-                                                        catch (Exception ex)
-                                                        {
+                                                        //    // DlibDotNet can create Array2D from file but this sample demonstrate
+                                                        //    // converting managed image class to dlib class and vice versa.
+                                                        //    var bitmap = new WriteableBitmap(BitmapFrame.Create(data));
+                                                        //    using (var image = bitmap.ToArray2D<RgbPixel>())
+                                                        //    {
+                                                        //        WriteableBitmap.Create()
+                                                        //        var dets = faceDetector.Operator(image);
+                                                        //        foreach (var r in dets)
+                                                        //            Dlib.DrawRectangle(image, r, new RgbPixel { Green = 255 });
 
-                                                            throw;
-                                                        }
-
-                                                    });
-
-                                                    //using (var data = new MemoryStream(File.ReadAllBytes(imageFile)))
-                                                    //{
-                                                    //    // DlibDotNet can create Array2D from file but this sample demonstrate
-                                                    //    // converting managed image class to dlib class and vice versa.
-                                                    //    var bitmap = new WriteableBitmap(BitmapFrame.Create(data));
-                                                    //    using (var image = bitmap.ToArray2D<RgbPixel>())
-                                                    //    {
-                                                    //        WriteableBitmap.Create()
-                                                    //        var dets = faceDetector.Operator(image);
-                                                    //        foreach (var r in dets)
-                                                    //            Dlib.DrawRectangle(image, r, new RgbPixel { Green = 255 });
-
-                                                    //        var result = image.ToWriteableBitmap();
-                                                    //        if (result.CanFreeze)
-                                                    //            result.Freeze();
-                                                    //        Application.Current.Dispatcher.Invoke(() =>
-                                                    //        {
-                                                    //            this.Image = result;
-                                                    //        });
-                                                    //    }
+                                                        //        var result = image.ToWriteableBitmap();
+                                                        //        if (result.CanFreeze)
+                                                        //            result.Freeze();
+                                                        //        Application.Current.Dispatcher.Invoke(() =>
+                                                        //        {
+                                                        //            this.Image = result;
+                                                        //        });
+                                                        //    }
+                                                    }
                                                 }
                                             }
                                         }
+                                    }
+                                    else
+                                    {
+                                        foreach (var fingerAndLocations in founded.FingerAndLocations)
+                                        {
+                                            VoteAndDistance predict = MyKnn.Classify(fingerAndLocations.FingerPrint, 
+                                                trainedInfo, classes.ToArray(), 1);
 
+                                            if (predict.Distance < DistanceThreshold)
+                                            {
+                                                Application.Current.Dispatcher.Invoke(() =>
+                                                {
+                                                    try
+                                                    {
+                                                        BitmapImage src = new BitmapImage();
+                                                        src.BeginInit();
+                                                        src.UriSource = new Uri(imageFile, UriKind.Relative);
+                                                        src.CacheOption = BitmapCacheOption.OnLoad;
+                                                        src.EndInit();
+                                                        //if (src.CanFreeze)
+                                                        //    src.Freeze();
+                                                        CroppedBitmap cropped = new CroppedBitmap(src,
+                                                            new Int32Rect(fingerAndLocations.Left, fingerAndLocations.Top,
+                                                                fingerAndLocations.Right - fingerAndLocations.Left,
+                                                                fingerAndLocations.Bottom - fingerAndLocations.Top));
+
+                                                        string directory = Path.GetDirectoryName(imageFile);
+                                                        var dirWithFaces = DirectoriesWithFaces
+                                                            .SingleOrDefault(dir => dir.Name == directory);
+                                                        if (dirWithFaces == null)
+                                                        {
+                                                            dirWithFaces = new DirectoryWithFaces(directory);
+                                                            DirectoriesWithFaces.Add(dirWithFaces);
+                                                        }
+
+                                                        dirWithFaces.Faces.Add(new FaceInfo()
+                                                        {
+                                                            Image = cropped,
+                                                            Path = imageFile,
+                                                            Predict = predict.Name
+                                                        });
+                                                    }
+                                                    catch (Exception ex)
+                                                    {
+
+                                                        throw;
+                                                    }
+
+                                                });
+                                            }
+                                        }
                                     }
 
                                     //int predicted = KNN.KNN.Classify(unknown, trainData, numClasses, k);

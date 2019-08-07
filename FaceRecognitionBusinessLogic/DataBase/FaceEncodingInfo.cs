@@ -12,6 +12,7 @@ namespace FaceRecognitionBusinessLogic.DataBase
         public FaceEncodingInfo()
         {
             FingerAndLocations = new List<FingerAndLocation>();
+            //NotPerson = new List<string>();
         }
 
         public FaceEncodingInfo(string path) : this()

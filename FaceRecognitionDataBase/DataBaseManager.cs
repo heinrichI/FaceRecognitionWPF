@@ -24,6 +24,7 @@ namespace FaceRecognitionDataBase
             //// "Products" and "Customer" are from other collections (not embedded document)
             mapper.Entity<FaceEncodingInfo>()
                 .DbRef(x => x.FingerAndLocations, "FingerAndLocations")    // 1 to Many reference
+                 .DbRef(x => x.NotPerson, "NotPerson")
                 .Id(f => f.Path);
 
             _db = new LiteDatabase(dataBaseName);
