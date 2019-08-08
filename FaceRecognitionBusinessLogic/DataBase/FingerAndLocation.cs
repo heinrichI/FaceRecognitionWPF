@@ -6,8 +6,10 @@ using System.Threading.Tasks;
 
 namespace FaceRecognitionBusinessLogic.DataBase
 {
-    public class FingerAndLocation
+    public class FingerAndLocation 
     {
+        public int Id { get; set; }
+
         //     Gets the y-axis value of the bottom of the rectangle of face.
         public int Bottom { get; set; }
 
@@ -21,5 +23,36 @@ namespace FaceRecognitionBusinessLogic.DataBase
         public int Top { get; set; }
 
         public double[] FingerPrint { get; set; }
-}
+
+        public override bool Equals(Object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != this.GetType()) return false;
+            return Equals((FingerAndLocation)obj);
+        }
+
+        protected bool Equals(FingerAndLocation other)
+        {
+            return Bottom == other.Bottom
+                && Left == other.Left 
+                && Right == other.Right 
+                && Top == other.Top 
+                && Equals(FingerPrint, other.FingerPrint);
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                int hashCode = Bottom;
+                hashCode = (hashCode * 397) ^ Left;
+                hashCode = (hashCode * 397) ^ Right;
+                hashCode = (hashCode * 397) ^ Top;
+                hashCode = (hashCode * 397) ^ (FingerPrint != null ? FingerPrint.GetHashCode() : 0);
+                return hashCode;
+            }
+        }
+
+    }
 }

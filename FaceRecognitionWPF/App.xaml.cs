@@ -28,8 +28,7 @@ namespace FaceRecognitionWPF
 
         protected override void OnStartup(StartupEventArgs e)
         {
-            AppDomain.CurrentDomain.UnhandledException +=
-      new UnhandledExceptionEventHandler(CurrentDomain_UnhandledException);
+            AppDomain.CurrentDomain.UnhandledException += new UnhandledExceptionEventHandler(CurrentDomain_UnhandledException);
             Application.Current.DispatcherUnhandledException += Current_DispatcherUnhandledException;
 
             //ConfigurationModel confModel = ConfigurationModel.Load();

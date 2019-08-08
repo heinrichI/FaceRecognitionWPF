@@ -6,30 +6,52 @@
         xmlns:local="clr-namespace:FaceRecognitionWPF.View"
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
-    <Grid >
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="0.4*"/>
-            <ColumnDefinition Width="0.6*"/>
-        </Grid.ColumnDefinitions>
+    
 
+    <!--<Grid >
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="300"/>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="1*"/>
+        </Grid.ColumnDefinitions>-->
+<DockPanel>
+
+        <ProgressBar Value="{Binding Progress}"
+                     DockPanel.Dock="Bottom"
+                     Height="10"
+                     Maximum="{Binding ProgressMaximum}"></ProgressBar>
+    
         <FrameworkElement x:Name="dummyElement" Visibility="Collapsed"/>
 
+        <Expander ExpandDirection="Right"
+              IsExpanded="True">
+            <Expander.Header>
+                <TextBlock Text="Setting">
+                    <TextBlock.LayoutTransform>
+                        <RotateTransform Angle="-90"/>
+                    </TextBlock.LayoutTransform>
+                </TextBlock>
+            </Expander.Header>
 
-        <StackPanel Grid.Column="0">
-            <Label>Models directory</Label>
-            <TextBox Text="{Binding ModelsDirectory}"></TextBox>
-            <Label>Train path</Label>
-            <TextBox Text="{Binding TrainPath}"></TextBox>
-            <Label>Search path</Label>
-            <TextBox Text="{Binding SearchPath}"></TextBox>
-            <Label>Search path</Label>
-            <Label>Distance threshold</Label>
-            <TextBox Text="{Binding DistanceThreshold}"></TextBox>
-            <Button Command="{Binding RunCommand}">Run</Button>
-            <Viewbox Grid.Row="0" Stretch="Fill">
-                <Image Source="{Binding ErrorImage, Mode=OneWay}"/>
-            </Viewbox>
-        </StackPanel>
+                <StackPanel >
+                <Label>Models directory</Label>
+                <TextBox Text="{Binding ModelsDirectory}"></TextBox>
+                <Label>Train path</Label>
+                <TextBox Text="{Binding TrainPath}"></TextBox>
+                <Label>Search path</Label>
+                <TextBox Text="{Binding SearchPath}"></TextBox>
+                <Label>Search path</Label>
+                <Label>Distance threshold</Label>
+                <TextBox Text="{Binding DistanceThreshold}"></TextBox>
+                <Button Command="{Binding RunCommand}">Run</Button>
+                <Viewbox Grid.Row="0" Stretch="Fill">
+                    <Image Source="{Binding ErrorImage, Mode=OneWay}"/>
+                </Viewbox>
+            </StackPanel>
+        </Expander>
+
+        <!--<GridSplitter Grid.Column="1" ShowsPreview="False" Width="3"
+        HorizontalAlignment="Center" VerticalAlignment="Stretch" />-->
 
         <ScrollViewer Grid.Column="1">
             
@@ -67,7 +89,8 @@
                                                                 Width="{Binding DataContext.ThumbnailWidth, Source={x:Reference dummyElement}}">
                                                 <Image Height="{Binding DataContext.ThumbnailWidth, Source={x:Reference dummyElement}}"
                                                                Source="{Binding Image, Mode=OneWay}" 
-                                                               Stretch="Uniform" >
+                                                               Stretch="Uniform"
+                                                       ToolTip="{Binding Path}">
                                                     <Image.InputBindings>
                                                         <MouseBinding MouseAction="LeftDoubleClick"
                                                                   Command="{Binding DataContext.OpenImageCommand, Source={x:Reference dummyElement}}"
@@ -90,5 +113,6 @@
             </DataGrid.Columns>
         </DataGrid>
         </ScrollViewer>
-    </Grid>
+        
+    </DockPanel>
 </Window>
