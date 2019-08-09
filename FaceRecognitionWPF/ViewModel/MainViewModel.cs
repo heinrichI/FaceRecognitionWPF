@@ -420,7 +420,9 @@ namespace FaceRecognitionWPF.ViewModel
                                 }
                                 }
                             }
-                        // FaceRecognition.CompareFaces()
+
+
+                            MessageBox.Show("Done!");
                     });
                     //.ContinueWith(c =>
                     //{
