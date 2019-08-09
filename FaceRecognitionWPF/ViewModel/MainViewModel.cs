@@ -4,6 +4,7 @@ using FaceRecognitionBusinessLogic;
 using FaceRecognitionBusinessLogic.DataBase;
 using FaceRecognitionBusinessLogic.ObjectModel;
 using FaceRecognitionDotNet;
+using FaceRecognitionWPF.Helper;
 using FaceRecognitionWPF.KNN;
 using FaceRecognitionWPF.View;
 using System;
@@ -11,7 +12,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
@@ -453,40 +453,99 @@ namespace FaceRecognitionWPF.ViewModel
                 //Image = new BitmapImage(croppedImage);
                 try
                 {
-                    BitmapImage src = new BitmapImage();
-                    src.BeginInit();
-                    src.UriSource = new Uri(imageFile, UriKind.Relative);
-                    src.CacheOption = BitmapCacheOption.OnLoad;
-                    src.EndInit();
+                    //BitmapImage src = new BitmapImage();
+                    //src.BeginInit();
+                    //src.UriSource = new Uri(imageFile, UriKind.Relative);
+                    //src.CacheOption = BitmapCacheOption.OnLoad;
+                    //src.EndInit();
+
+                    //var src = new BitmapImage();
+                    //using (var stream = File.OpenRead(imageFile))
+                    //{
+                    //    src.BeginInit();
+                    //    src.CacheOption = BitmapCacheOption.OnLoad;
+                    //    src.StreamSource = stream;
+                    //    src.EndInit();
+                    //    stream.Close();
+                    //}
+
+                    // Create an instance of WriteableBitmap from the original image.
+                    // If you want to Skew or Rotate the cropped image, specify it as the second parameter.
+                    // Just pass "null" if you want to use the original image directly.
+                    //var writeableBitmap = new WriteableBitmap(src, null);
+
+                    //// Crop and set the new WriteableBitmap as the image source
+                    //CroppedImage.Source = CropImage(writeableBitmap, X, Y, WIDTH, HEIGHT);
+
+                    System.Drawing.Bitmap croppedImage;
+
+                    using (var image = System.Drawing.Image.FromFile(imageFile))
+                    using (var src = new System.Drawing.Bitmap(image))
+                    {
+                        if (left > src.Width)
+                            throw new ArgumentException("left > src.Width");
+                        if (top > src.Height)
+                            throw new ArgumentException("top > src.Height");
+                        int leftBorderAdded = left - addBorder >= 0 ? left - addBorder : left;
+                        int topBorderAdded = top - addBorder >= 0 ? top - addBorder : top;
+                        int widthBorderAdded = leftBorderAdded + width + addBorder * 2 > src.Width ?
+                          (int)src.Width - leftBorderAdded : width + addBorder * 2;
+                        int heightBorderAdded = topBorderAdded + height + addBorder * 2 > src.Height ?
+                            (int)src.Height - topBorderAdded : height + addBorder * 2;
+
+                        if (leftBorderAdded + widthBorderAdded > (int)src.Width)
+                            throw new ArgumentException("leftBorderAdded + widthBorderAdded > (int)src.Width");
+                        if (topBorderAdded + heightBorderAdded > (int)src.Height)
+                            throw new ArgumentException("topBorderAdded + heightBorderAdded > (int)src.Height");
+                        //CroppedBitmap cropped = new CroppedBitmap(src, new Int32Rect(leftBorderAdded, topBorderAdded,
+                        //    widthBorderAdded, heightBorderAdded));
+                        System.Drawing.Rectangle croppedRect = new System.Drawing.Rectangle(leftBorderAdded, topBorderAdded,
+                            widthBorderAdded, heightBorderAdded);
+                        croppedImage = new System.Drawing.Bitmap(widthBorderAdded, heightBorderAdded);
+                        using (System.Drawing.Graphics g = System.Drawing.Graphics.FromImage(croppedImage))
+                        {
+                            g.DrawImage(image, new System.Drawing.Rectangle(0, 0, widthBorderAdded, heightBorderAdded),
+                                croppedRect,
+                                System.Drawing.GraphicsUnit.Pixel);
+                        }
+
+                        //var resized = new Bitmap(size, size);
+                        //var resizedPalette = resized.Palette;
+                        //using (var graphics = Graphics.FromImage(resized))
+                        //{
+                        //    graphics.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighSpeed;
+                        //    graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                        //    graphics.CompositingMode = System.Drawing.Drawing2D.CompositingMode.SourceCopy;
+                        //    graphics.DrawImage(croppedImage, 0, 0, size, size);
+                        //    using (var output = System.IO.File.Open(thumbnailPath, FileMode.Create))
+                        //    {
+                        //        resized.Save(output, System.Drawing.Imaging.ImageFormat.Jpeg);
+                        //    }
+                        //}
+                    }
+
                     //if (src.CanFreeze)
                     //    src.Freeze();
-                    if (left > src.PixelWidth)
-                        //left = (int)src.Width - width;
-                        throw new ArgumentException("left > src.Width");
-                    if (top > src.PixelHeight)
-                        //top = (int)src.Height - height;
-                        throw new ArgumentException("top > src.Height");
-                    int leftBorderAdded = left - addBorder >= 0 ? left - addBorder : left;
-                    //int topBorderAdded = top > addBorder ? top - addBorder : top;
-                    //int widthBorderAdded = leftBorderAdded + width + addBorder * 2 > src.Width ?
-                    //    (int)src.Width - leftBorderAdded < 0 ? (int)src.Width : Math.Max(width, (int)src.Width - leftBorderAdded)
-                    //    : width + addBorder * 2;
-                    //int heightBorderAdded = topBorderAdded + height + addBorder * 2 > src.Height ?
-                    //    (int)src.Height - topBorderAdded < 0 ? (int)src.Height : Math.Max(height, (int)src.Height - topBorderAdded)
-                    //    : height + addBorder * 2;
-                    int topBorderAdded = top - addBorder >= 0 ? top - addBorder : top;
-                    int widthBorderAdded = leftBorderAdded + width + addBorder * 2 > src.PixelWidth ?
-                      (int)src.PixelWidth - leftBorderAdded : width + addBorder * 2;
-                    int heightBorderAdded = topBorderAdded + height + addBorder * 2 > src.PixelHeight ?
-                        (int)src.PixelHeight - topBorderAdded : height + addBorder * 2;
 
-                    if (leftBorderAdded + widthBorderAdded > (int)src.PixelWidth)
-                        throw new ArgumentException("leftBorderAdded + widthBorderAdded > (int)src.Width");
-                    if (topBorderAdded + heightBorderAdded > (int)src.PixelHeight)
-                        throw new ArgumentException("topBorderAdded + heightBorderAdded > (int)src.Height");
-                    CroppedBitmap cropped = new CroppedBitmap(src, new Int32Rect(leftBorderAdded, topBorderAdded,
-                        widthBorderAdded, heightBorderAdded));
+                    //if (left > src.PixelWidth)
+                    //    throw new ArgumentException("left > src.Width");
+                    //if (top > src.PixelHeight)
+                    //    throw new ArgumentException("top > src.Height");
+                    //int leftBorderAdded = left - addBorder >= 0 ? left - addBorder : left;
+                    //int topBorderAdded = top - addBorder >= 0 ? top - addBorder : top;
+                    //int widthBorderAdded = leftBorderAdded + width + addBorder * 2 > src.PixelWidth ?
+                    //  (int)src.PixelWidth - leftBorderAdded : width + addBorder * 2;
+                    //int heightBorderAdded = topBorderAdded + height + addBorder * 2 > src.PixelHeight ?
+                    //    (int)src.PixelHeight - topBorderAdded : height + addBorder * 2;
 
+                    //if (leftBorderAdded + widthBorderAdded > (int)src.PixelWidth)
+                    //    throw new ArgumentException("leftBorderAdded + widthBorderAdded > (int)src.Width");
+                    //if (topBorderAdded + heightBorderAdded > (int)src.PixelHeight)
+                    //    throw new ArgumentException("topBorderAdded + heightBorderAdded > (int)src.Height");
+                    //CroppedBitmap cropped = new CroppedBitmap(src, new Int32Rect(leftBorderAdded, topBorderAdded,
+                    //    widthBorderAdded, heightBorderAdded));
+
+                    //src = null;
                     //this.Image = cropped;
 
                     string directory = Path.GetDirectoryName(imageFile);
@@ -504,9 +563,12 @@ namespace FaceRecognitionWPF.ViewModel
                     //    image = new ImageInfo(imageFile);
                     //    dirWithFaces.Images.Add(image);
                     //}
+
+                    ImageSource imageSource = ImageHelper.GetImageStream(croppedImage);
+                    croppedImage.Dispose();
                     dirWithFaces.Faces.Add(new FaceInfo()
                     {
-                        Image = cropped,
+                        Image = imageSource,
                         Path = imageFile,
                         Predict = $"{predict.Name} {predict.Distance}"
                     });

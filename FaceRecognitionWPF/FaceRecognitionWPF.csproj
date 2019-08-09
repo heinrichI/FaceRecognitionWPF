@@ -71,6 +71,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Helper\ImageHelper.cs" />
     <Compile Include="KNN\ClassInfo.cs" />
     <Compile Include="KNN\IndexAndDistance.cs" />
     <Compile Include="KNN\KNN.cs" />
