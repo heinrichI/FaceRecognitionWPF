@@ -72,12 +72,8 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Helper\ImageHelper.cs" />
-    <Compile Include="KNN\ClassInfo.cs" />
-    <Compile Include="KNN\IndexAndDistance.cs" />
-    <Compile Include="KNN\KNN.cs" />
-    <Compile Include="KNN\MyKnn.cs" />
-    <Compile Include="KNN\VoteAndDistance.cs" />
     <Compile Include="RelayCommand.cs" />
+    <Compile Include="SearchManager.cs" />
     <Compile Include="ViewModel\FaceViewModel.cs" />
     <Compile Include="ViewModel\IClosingViewModel.cs" />
     <Compile Include="ViewModel\MainViewModel.cs" />
@@ -138,5 +134,6 @@
       <Name>FaceRecognitionDataBase</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

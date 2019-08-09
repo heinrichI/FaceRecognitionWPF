@@ -16,7 +16,7 @@
         </Grid.ColumnDefinitions>-->
 <DockPanel>
 
-        <ProgressBar Value="{Binding Progress}"
+        <ProgressBar Value="{Binding ProgressValue}"
                      DockPanel.Dock="Bottom"
                      Height="10"
                      Maximum="{Binding ProgressMaximum}"></ProgressBar>

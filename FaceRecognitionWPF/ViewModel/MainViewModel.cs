@@ -2,10 +2,10 @@
 using DlibDotNet.Extensions;
 using FaceRecognitionBusinessLogic;
 using FaceRecognitionBusinessLogic.DataBase;
+using FaceRecognitionBusinessLogic.KNN;
 using FaceRecognitionBusinessLogic.ObjectModel;
 using FaceRecognitionDotNet;
 using FaceRecognitionWPF.Helper;
-using FaceRecognitionWPF.KNN;
 using FaceRecognitionWPF.View;
 using System;
 using System.Collections.Generic;
@@ -37,7 +37,17 @@ namespace FaceRecognitionWPF.ViewModel
             DistanceThreshold = 0.6;
 
             DirectoriesWithFaces = new ObservableCollection<DirectoryWithFaces>();
+
+            _progress = new Progress<ProgressPartialResult>((result) =>
+            {
+                ProgressMaximum = result.Total;
+                ProgressValue = result.Current;
+                //ProgressValueTaskbar = (double)result.Current / (double)result.Total;
+                //ProgressText = String.Format("{0} / {1}  {2}", result.Current, result.Total, result.Text);
+            });
         }
+
+        private IProgress<ProgressPartialResult> _progress;
 
         View.WindowService _windowService;
 
@@ -135,10 +145,10 @@ namespace FaceRecognitionWPF.ViewModel
             }
         }
 
-        int _progress;
-        public int Progress
+        int _progressValue;
+        public int ProgressValue
         {
-            get => this._progress;
+            get => this._progressValue;
             set
             {
                 this._progress = value;
@@ -152,8 +162,11 @@ namespace FaceRecognitionWPF.ViewModel
             get => this._progressMaximum;
             set
             {
-                this._progressMaximum = value;
-                this.OnPropertyChanged();
+                if (_progressMaximum != value)
+                {
+                    this._progressMaximum = value;
+                    this.OnPropertyChanged();
+                }
             }
         }
         
@@ -166,10 +179,10 @@ namespace FaceRecognitionWPF.ViewModel
             {
                 return this._runCommand ?? (this._runCommand = new RelayCommand(async (arg) =>
                 {
-                    IProgress<int> progress = new Progress<int>(percent =>
-                    {
-                        Progress = percent;
-                    });
+                    //IProgress<int> progress = new Progress<int>(percent =>
+                    //{
+                    //    Progress = percent;
+                    //});
 
                     try
                     {
@@ -304,6 +317,8 @@ namespace FaceRecognitionWPF.ViewModel
                                         //}
                                     }
                                     }
+
+                                    SearchManager sm = new SearchManager(2, SearchPath, _progress, db);
 
                                 var ext = new List<string> { ".jpg", ".jpeg", ".png" };
                                 var searchFiles = System.IO.Directory.GetFiles(SearchPath, "*", SearchOption.AllDirectories)

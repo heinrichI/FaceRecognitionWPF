@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FaceRecognitionWPF.KNN
+namespace FaceRecognitionBusinessLogic.KNN
 {
     public class IndexAndDistance : IComparable<IndexAndDistance>
     {

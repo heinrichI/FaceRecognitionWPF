@@ -1,13 +1,12 @@
-﻿using FaceRecognitionDotNet;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FaceRecognitionWPF.KNN
+namespace FaceRecognitionBusinessLogic.KNN
 {
-    class ClassInfo
+    public class ClassInfo
     {
         public ClassInfo(string className, double[] data)
         {

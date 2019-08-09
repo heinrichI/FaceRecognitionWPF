@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FaceRecognitionWPF.KNN
+namespace FaceRecognitionBusinessLogic.KNN
 {
-    class VoteAndDistance
+    public class VoteAndDistance
     {
         public VoteAndDistance(string name)
         {

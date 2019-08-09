@@ -46,9 +46,15 @@
     <Compile Include="DataBase\FaceEncodingInfo.cs" />
     <Compile Include="DataBase\FingerAndLocation.cs" />
     <Compile Include="DataBase\IDataBaseManager.cs" />
+    <Compile Include="KNN\ClassInfo.cs" />
+    <Compile Include="KNN\IndexAndDistance.cs" />
+    <Compile Include="KNN\KNN.cs" />
+    <Compile Include="KNN\MyKnn.cs" />
+    <Compile Include="KNN\VoteAndDistance.cs" />
     <Compile Include="ObjectModel\DirectoryWithFaces.cs" />
     <Compile Include="ObjectModel\FaceInfo.cs" />
     <Compile Include="ObjectModel\ImageInfo.cs" />
+    <Compile Include="ProgressPartialResult.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TinyIoC.cs" />
   </ItemGroup>
