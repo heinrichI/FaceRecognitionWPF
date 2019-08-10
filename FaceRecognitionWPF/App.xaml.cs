@@ -1,4 +1,5 @@
-﻿using FaceRecognitionBusinessLogic.DataBase;
+﻿using FaceRecognitionBusinessLogic;
+using FaceRecognitionBusinessLogic.DataBase;
 using FaceRecognitionDataBase;
 using FaceRecognitionWPF.View;
 using System;
@@ -8,6 +9,7 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
+using TinyIoC;
 
 namespace FaceRecognitionWPF
 {
@@ -31,9 +33,9 @@ namespace FaceRecognitionWPF
             AppDomain.CurrentDomain.UnhandledException += new UnhandledExceptionEventHandler(CurrentDomain_UnhandledException);
             Application.Current.DispatcherUnhandledException += Current_DispatcherUnhandledException;
 
-            //ConfigurationModel confModel = ConfigurationModel.Load();
-            //// Register config
-            //TinyIoCContainer.Current.Register<IConfigurationModel, ConfigurationModel>(confModel);
+            Configuration configuration = Configuration.Load();
+            // Register config
+            TinyIoCContainer.Current.Register<IConfiguration, Configuration>(configuration);
 
             //LanguageService languageService = new LanguageService(confModel);
             //TinyIoCContainer.Current.Register<ILanguageService, LanguageService>(languageService);
@@ -48,7 +50,7 @@ namespace FaceRecognitionWPF
 
             //var model = new MainModel();
             //DllModel model = DllModel.LoadSetting();
-            var viewModel = new ViewModel.MainViewModel(windowService);
+            var viewModel = new ViewModel.MainViewModel(windowService, configuration);
 
 
             shell.DataContext = viewModel;

@@ -27,14 +27,10 @@ namespace FaceRecognitionWPF.ViewModel
 {
     class MainViewModel : BasePropertyChanged
     {
-        public MainViewModel(View.WindowService windowService)
+        public MainViewModel(View.WindowService windowService, IConfiguration configuration)
         {
             _windowService = windowService;
-
-            TrainPath = @"d:\Борисов\WallpapersSort\FaceTrain";
-            SearchPath = @"d:\Борисов\WallpapersSort\body";
-            ModelsDirectory = @"d:\face_recognition_models";
-            DistanceThreshold = 0.6;
+            _configuration = configuration;
 
             DirectoriesWithFaces = new ObservableCollection<DirectoryWithFaces>();
 
@@ -43,57 +39,26 @@ namespace FaceRecognitionWPF.ViewModel
                 ProgressMaximum = result.Total;
                 ProgressValue = result.Current;
                 //ProgressValueTaskbar = (double)result.Current / (double)result.Total;
-                //ProgressText = String.Format("{0} / {1}  {2}", result.Current, result.Total, result.Text);
+                ProgressText = String.Format("{0} / {1}  {2}", result.Current, result.Total, result.Text);
             });
         }
+
+
+        public void OnClosing(object sender, CancelEventArgs e)
+        {
+            _configuration.Save();
+        }
+
+       
 
         private IProgress<ProgressPartialResult> _progress;
 
         View.WindowService _windowService;
 
-        string _trainPath;
-        public string TrainPath
+        IConfiguration _configuration;
+        public IConfiguration Configuration
         {
-            get => this._trainPath;
-            set
-            {
-                this._trainPath = value;
-                this.RaisePropertyChangedEvent("TrainPath");
-            }
-        }
-
-        string _searchPath;
-        public string SearchPath
-        {
-            get => this._searchPath;
-            set
-            {
-                this._searchPath = value;
-                this.RaisePropertyChangedEvent("SearchPath");
-            }
-        }
-
-        string _modelsDirectory;
-        public string ModelsDirectory
-        {
-            get => this._modelsDirectory;
-            set
-            {
-                this._modelsDirectory = value;
-                this.RaisePropertyChangedEvent("ModelsDirectory");
-            }
-        }
-
-
-        double _distanceThreshold;
-        public double DistanceThreshold
-        {
-            get => this._distanceThreshold;
-            set
-            {
-                this._distanceThreshold = value;
-                this.RaisePropertyChangedEvent("DistanceThreshold");
-            }
+            get { return _configuration; }
         }
 
         ObservableCollection<DirectoryWithFaces> _directoriesWithFaces;
@@ -105,12 +70,6 @@ namespace FaceRecognitionWPF.ViewModel
                 this._directoriesWithFaces = value;
                 this.OnPropertyChanged();
             }
-        }
-
-
-        public void OnClosing(object sender, CancelEventArgs e)
-        {
-
         }
 
 
@@ -151,7 +110,7 @@ namespace FaceRecognitionWPF.ViewModel
             get => this._progressValue;
             set
             {
-                this._progress = value;
+                this._progressValue = value;
                 this.OnPropertyChanged();
             }
         }
@@ -169,8 +128,18 @@ namespace FaceRecognitionWPF.ViewModel
                 }
             }
         }
-        
 
+        string _progressText;
+        public string ProgressText
+        {
+            get => this._progressText;
+            set
+            {
+                this._progressText = value;
+                this.OnPropertyChanged();
+            }
+        }
+        
 
         private RelayCommand _runCommand;
         public RelayCommand RunCommand
@@ -195,22 +164,30 @@ namespace FaceRecognitionWPF.ViewModel
                             IFormatterConverter formatterConverter = new FormatterConverter();
                             StreamingContext context = new StreamingContext();
 
-
                             using (var db = TinyIoC.TinyIoCContainer.Current.Resolve<IDataBaseManager>(
                                 new NamedParameterOverloads() { { "dataBaseName", "faces.litedb" } }))
                             {
-                                using (var faceRecognition = FaceRecognition.Create(ModelsDirectory))
-                                {
-                                    var directories = System.IO.Directory.GetDirectories(TrainPath);
-                                    var classes = directories.Select(d => new DirectoryInfo(d).Name);
+                                List<ClassInfo> trainedInfo = new List<ClassInfo>();
+                                IEnumerable<string> classes;
 
-                                    List<ClassInfo> trainedInfo = new List<ClassInfo>();
+                                using (var faceRecognition = FaceRecognition.Create(_configuration.ModelsDirectory))
+                                {
+                                    var directories = System.IO.Directory.GetDirectories(_configuration.TrainPath);
+                                    classes = directories.Select(d => new DirectoryInfo(d).Name);
+
+                                    ProgressMaximum = directories.Length;
+                                    int current = 0;
                                     foreach (var directory in directories)
                                     {
+                                        ProgressValue = current;
+                                        current++;
+
                                         var files = System.IO.Directory.GetFiles(directory);
 
                                         foreach (var imageFile in files)
                                         {
+                                            ProgressText = imageFile;
+
                                             FaceEncodingInfo founded = db.GetFromDB(imageFile);
                                             if (founded == null)
                                             {
@@ -316,125 +293,129 @@ namespace FaceRecognitionWPF.ViewModel
                                         //    }
                                         //}
                                     }
-                                    }
+                                }
 
-                                    SearchManager sm = new SearchManager(2, SearchPath, _progress, db);
 
-                                var ext = new List<string> { ".jpg", ".jpeg", ".png" };
-                                var searchFiles = System.IO.Directory.GetFiles(SearchPath, "*", SearchOption.AllDirectories)
-                                .Where(s => ext.Contains(Path.GetExtension(s)));
-                                    //string imageFile3 = @"d:\Борисов\WallpapersSort\body\-11072550_376068146.jpg";
+                                //var ext = new List<string> { ".jpg", ".jpeg", ".png" };
+                                //var searchFiles = System.IO.Directory.GetFiles(SearchPath, "*", SearchOption.AllDirectories)
+                                //.Where(s => ext.Contains(Path.GetExtension(s)));
+                                //    //string imageFile3 = @"d:\Борисов\WallpapersSort\body\-11072550_376068146.jpg";
 
-                                    int progressCount = 0;
-                                    ProgressMaximum = searchFiles.Count();
-                                foreach (var imageFile in searchFiles)
-                                    {
-                                        progress.Report(progressCount);
-                                        progressCount++;
+                                //    int progressCount = 0;
+                                //    ProgressMaximum = searchFiles.Count();
+                                //foreach (var imageFile in searchFiles)
+                                //    {
+                                //        progress.Report(progressCount);
+                                //        progressCount++;
 
-                                        //load image
-                                        //using (var ms = new MemoryStream(File.ReadAllBytes(imageFile3)))
-                                        FaceEncodingInfo founded = db.GetFromDB(imageFile);
-                                        if (founded == null)
-                                        {
-                                            FaceRecognitionDotNet.Image unknownImage;
-                                            try
-                                            {
-                                                unknownImage = FaceRecognition.LoadImageFile(imageFile);
-                                            }
-                                            catch (Exception ex)
-                                            {
-                                                MessageBox.Show($"{ex.Message} \n {ex.StackTrace} \n {ex?.InnerException?.Message}", "Uncaught Thread Exception",
-                                                    MessageBoxButton.OK, MessageBoxImage.Error);
-                                                continue;
-                                            }
-                                            using (unknownImage)
-                                        //using (var unknownImage = FaceRecognition.LoadImage(ms))
-                                        {
-                                                Debug.WriteLine($"Read {imageFile}");
-                                                //find face locations
-                                                var locations = faceRecognition.FaceLocations(unknownImage);
-                                                //# If no faces are found in the image, return an empty result.
-                                                if (!locations.Any())
-                                                {
-                                                    Debug.WriteLine($"In {imageFile} not found faces");
-                                                    db.AddFileWithoutFace(imageFile);
-                                                    continue;
-                                                }
+                                //        //load image
+                                //        //using (var ms = new MemoryStream(File.ReadAllBytes(imageFile3)))
+                                //        FaceEncodingInfo founded = db.GetFromDB(imageFile);
+                                //        if (founded == null)
+                                //        {
+                                //            FaceRecognitionDotNet.Image unknownImage;
+                                //            try
+                                //            {
+                                //                unknownImage = FaceRecognition.LoadImageFile(imageFile);
+                                //            }
+                                //            catch (Exception ex)
+                                //            {
+                                //                MessageBox.Show($"{ex.Message} \n {ex.StackTrace} \n {ex?.InnerException?.Message}", "Uncaught Thread Exception",
+                                //                    MessageBoxButton.OK, MessageBoxImage.Error);
+                                //                continue;
+                                //            }
+                                //            using (unknownImage)
+                                //        //using (var unknownImage = FaceRecognition.LoadImage(ms))
+                                //        {
+                                //                Debug.WriteLine($"Read {imageFile}");
+                                //                //find face locations
+                                //                var locations = faceRecognition.FaceLocations(unknownImage);
+                                //                //# If no faces are found in the image, return an empty result.
+                                //                if (!locations.Any())
+                                //                {
+                                //                    Debug.WriteLine($"In {imageFile} not found faces");
+                                //                    db.AddFileWithoutFace(imageFile);
+                                //                    continue;
+                                //                }
 
-                                                foreach (var location in locations)
-                                                {
-                                                    var encodings = faceRecognition.FaceEncodings(unknownImage, new Location[] { location });
-                                                    if (encodings == null)
-                                                        continue;
+                                //                foreach (var location in locations)
+                                //                {
+                                //                    var encodings = faceRecognition.FaceEncodings(unknownImage, new Location[] { location });
+                                //                    if (encodings == null)
+                                //                        continue;
 
-                                                    var encoding = encodings.Single();
-                                                    //foreach (var encoding in encodings)
+                                //                    var encoding = encodings.Single();
+                                //                    //foreach (var encoding in encodings)
                                                     
-                                                    var info = new SerializationInfo(typeof(double), formatterConverter);
-                                                    encoding.GetObjectData(info, context);
-                                                    encoding.Dispose();
+                                //                    var info = new SerializationInfo(typeof(double), formatterConverter);
+                                //                    encoding.GetObjectData(info, context);
+                                //                    encoding.Dispose();
 
-                                                    double[] unknown = (double[])info.GetValue("_Encoding", typeof(double[]));
-                                                    db.AddFaceInfo(imageFile, unknown, location.Left, location.Right,
-                                                        location.Top, location.Bottom);
+                                //                    double[] unknown = (double[])info.GetValue("_Encoding", typeof(double[]));
+                                //                    db.AddFaceInfo(imageFile, unknown, location.Left, location.Right,
+                                //                        location.Top, location.Bottom);
 
-                                                    VoteAndDistance predict = MyKnn.Classify(unknown, trainedInfo, classes.ToArray(), 1);
+                                //                    VoteAndDistance predict = MyKnn.Classify(unknown, trainedInfo, classes.ToArray(), 1);
 
-                                                    if (predict.Distance < DistanceThreshold)
-                                                    {
-                                                        Debug.WriteLine($"Found {predict.Name} in {imageFile} with {predict.Distance} distance");
-                                                        AddToViewImage(imageFile, DirectoriesWithFaces, predict, location.Left, location.Top,
-                                                                        location.Right - location.Left, location.Bottom - location.Top);
-                                                    }
+                                //                    if (predict.Distance < DistanceThreshold)
+                                //                    {
+                                //                        Debug.WriteLine($"Found {predict.Name} in {imageFile} with {predict.Distance} distance");
+                                //                        AddToViewImage(imageFile, DirectoriesWithFaces, predict, location.Left, location.Top,
+                                //                                        location.Right - location.Left, location.Bottom - location.Top);
+                                //                    }
 
-                                                    //using (var data = new MemoryStream(File.ReadAllBytes(imageFile)))
-                                                    //{
-                                                    //    // DlibDotNet can create Array2D from file but this sample demonstrate
-                                                    //    // converting managed image class to dlib class and vice versa.
-                                                    //    var bitmap = new WriteableBitmap(BitmapFrame.Create(data));
-                                                    //    using (var image = bitmap.ToArray2D<RgbPixel>())
-                                                    //    {
-                                                    //        WriteableBitmap.Create()
-                                                    //        var dets = faceDetector.Operator(image);
-                                                    //        foreach (var r in dets)
-                                                    //            Dlib.DrawRectangle(image, r, new RgbPixel { Green = 255 });
+                                //                    //using (var data = new MemoryStream(File.ReadAllBytes(imageFile)))
+                                //                    //{
+                                //                    //    // DlibDotNet can create Array2D from file but this sample demonstrate
+                                //                    //    // converting managed image class to dlib class and vice versa.
+                                //                    //    var bitmap = new WriteableBitmap(BitmapFrame.Create(data));
+                                //                    //    using (var image = bitmap.ToArray2D<RgbPixel>())
+                                //                    //    {
+                                //                    //        WriteableBitmap.Create()
+                                //                    //        var dets = faceDetector.Operator(image);
+                                //                    //        foreach (var r in dets)
+                                //                    //            Dlib.DrawRectangle(image, r, new RgbPixel { Green = 255 });
 
-                                                    //        var result = image.ToWriteableBitmap();
-                                                    //        if (result.CanFreeze)
-                                                    //            result.Freeze();
-                                                    //        Application.Current.Dispatcher.Invoke(() =>
-                                                    //        {
-                                                    //            this.Image = result;
-                                                    //        });
-                                                    //    }
+                                //                    //        var result = image.ToWriteableBitmap();
+                                //                    //        if (result.CanFreeze)
+                                //                    //            result.Freeze();
+                                //                    //        Application.Current.Dispatcher.Invoke(() =>
+                                //                    //        {
+                                //                    //            this.Image = result;
+                                //                    //        });
+                                //                    //    }
                                                     
                                            
-                                                }
-                                            }
-                                        }
-                                        else
-                                        {
-                                            foreach (var fingerAndLocations in founded.FingerAndLocations)
-                                            {
-                                                VoteAndDistance predict = MyKnn.Classify(fingerAndLocations.FingerPrint,
-                                                    trainedInfo, classes.ToArray(), 1);
+                                //                }
+                                //            }
+                                //        }
+                                //        else
+                                //        {
+                                //            foreach (var fingerAndLocations in founded.FingerAndLocations)
+                                //            {
+                                //                VoteAndDistance predict = MyKnn.Classify(fingerAndLocations.FingerPrint,
+                                //                    trainedInfo, classes.ToArray(), 1);
 
-                                                if (predict.Distance < DistanceThreshold)
-                                                {
-                                                    AddToViewImage(imageFile, DirectoriesWithFaces, predict,
-                                                        fingerAndLocations.Left, fingerAndLocations.Top,
-                                                        fingerAndLocations.Right - fingerAndLocations.Left,
-                                                        fingerAndLocations.Bottom - fingerAndLocations.Top);
+                                //                if (predict.Distance < DistanceThreshold)
+                                //                {
+                                //                    AddToViewImage(imageFile, DirectoriesWithFaces, predict,
+                                //                        fingerAndLocations.Left, fingerAndLocations.Top,
+                                //                        fingerAndLocations.Right - fingerAndLocations.Left,
+                                //                        fingerAndLocations.Bottom - fingerAndLocations.Top);
 
-                                                }
-                                            }
-                                        }
+                                //                }
+                                //            }
+                                //        }
 
                                     //int predicted = KNN.KNN.Classify(unknown, trainData, numClasses, k);
+                                //}
                                 }
-                                }
+
+                                SearchManager sm = new SearchManager(2, _configuration.SearchPath, _progress, db,
+                                    _configuration.ModelsDirectory, trainedInfo, classes, _configuration.DistanceThreshold,
+                                    DirectoriesWithFaces, AddToViewImage);
                             }
+
 
 
                             MessageBox.Show("Done!");

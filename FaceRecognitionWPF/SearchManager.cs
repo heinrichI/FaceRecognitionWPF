@@ -20,9 +20,15 @@ namespace FaceRecognitionWPF
     public class SearchManager
     {
         static object _searchStackLocker = new object();
-        Stack<string> _searchStack;
+        static object _dbLocker = new object();
+        static object _progressLocker = new object();
+
+        //Stack<string> _searchStack;
+        Queue<string> _searchQueue;
         IProgress<ProgressPartialResult> _progress;
         int _progressMaximum;
+        int _current = 0;
+
         IDataBaseManager _db;
         string _modelsDirectory;
         IFormatterConverter _formatterConverter = new FormatterConverter();
@@ -30,33 +36,48 @@ namespace FaceRecognitionWPF
         List<ClassInfo> _trainedInfo;
         IEnumerable<string> _classes;
         double _distanceThreshold;
+        ObservableCollection<DirectoryWithFaces> _directoryWithFaces;
         Action<string, ObservableCollection<DirectoryWithFaces>,
             VoteAndDistance, int, int, int, int> _addToViewImageAction;
 
-        public SearchManager(int threadCount, string searchPath, IProgress<ProgressPartialResult> progress,
-            IDataBaseManager db, string modelsDirector, List<ClassInfo> trainedInfo, IEnumerable<string> classes,
-            double distanceThreshold, Action<string, ObservableCollection<DirectoryWithFaces>,
-            VoteAndDistance, int, int, int, int> addToViewImageAction)
+        public SearchManager(int threadCount, 
+            string searchPath, 
+            IProgress<ProgressPartialResult> progress,
+            IDataBaseManager db, 
+            string modelsDirectory, 
+            List<ClassInfo> trainedInfo, 
+            IEnumerable<string> classes,
+            double distanceThreshold,
+            ObservableCollection<DirectoryWithFaces> directoryWithFaces,
+            Action<string, ObservableCollection<DirectoryWithFaces>, 
+                VoteAndDistance, int, int, int, int> addToViewImageAction)
         {
             _progress = progress;
             _db = db;
-            _modelsDirectory = modelsDirector;
+            _modelsDirectory = modelsDirectory;
             _trainedInfo = trainedInfo;
             _classes = classes;
             _distanceThreshold = distanceThreshold;
+            _directoryWithFaces = directoryWithFaces;
             _addToViewImageAction = addToViewImageAction;
+
+            _progress.Report(new ProgressPartialResult() { Current = 0, Total = 0, Text = "Read images in directory" });
 
             var ext = new List<string> { ".jpg", ".jpeg", ".png" };
             var searchFiles = System.IO.Directory.GetFiles(searchPath, "*", SearchOption.AllDirectories)
             .Where(s => ext.Contains(Path.GetExtension(s)));
             _progressMaximum = searchFiles.Count();
-            _searchStack = new Stack<string>(searchFiles);
+            //_searchStack = new Stack<string>(searchFiles);
+            //_searchStack.Reverse();
+            _searchQueue = new Queue<string>(searchFiles);
 
             Thread[] threads = new Thread[threadCount];
 
             for (int i = 0; i < threadCount; i++)
             {
                 threads[i] = new Thread(ThreadWork);
+                threads[i].IsBackground = true;
+                threads[i].Priority = ThreadPriority.Lowest;
                 threads[i].Start();
             }
 
@@ -76,21 +97,28 @@ namespace FaceRecognitionWPF
                 {
                     lock (_searchStackLocker)
                     {
-                        if (_searchStack.Count > 0)
-                            imagePath = _searchStack.Pop();
+                        if (_searchQueue.Count > 0)
+                            imagePath = _searchQueue.Dequeue();
                         else
                             return;
                     }
 
 
-                    int current = 0;
 
-                    _progress.Report(new ProgressPartialResult() { Current = current, Total = _progressMaximum, Text = imagePath });
-                    current++;
+
+                    _progress.Report(new ProgressPartialResult() { Current = _current, Total = _progressMaximum, Text = imagePath });
+                    lock (_progressLocker)
+                    { 
+                        _current++;
+                    }
 
                     //load image
                     //using (var ms = new MemoryStream(File.ReadAllBytes(imageFile3)))
-                    FaceEncodingInfo founded = _db.GetFromDB(imagePath);
+                    FaceEncodingInfo founded;
+                    lock (_dbLocker)
+                    {
+                        founded = _db.GetFromDB(imagePath);
+                    }
                     if (founded == null)
                     {
                         FaceRecognitionDotNet.Image unknownImage;
@@ -114,7 +142,10 @@ namespace FaceRecognitionWPF
                             if (!locations.Any())
                             {
                                 Debug.WriteLine($"In {imagePath} not found faces");
-                                _db.AddFileWithoutFace(imagePath);
+                                lock (_dbLocker)
+                                {
+                                    _db.AddFileWithoutFace(imagePath);
+                                }
                                 continue;
                             }
 
@@ -132,20 +163,20 @@ namespace FaceRecognitionWPF
                                 encoding.Dispose();
 
                                 double[] unknown = (double[])info.GetValue("_Encoding", typeof(double[]));
-                                _db.AddFaceInfo(imagePath, unknown, location.Left, location.Right,
+                                lock (_dbLocker)
+                                {
+                                    _db.AddFaceInfo(imagePath, unknown, location.Left, location.Right,
                                     location.Top, location.Bottom);
+                                }
 
                                 VoteAndDistance predict = MyKnn.Classify(unknown, _trainedInfo, _classes.ToArray(), 1);
 
                                 if (predict.Distance < _distanceThreshold)
                                 {
                                     Debug.WriteLine($"Found {predict.Name} in {imagePath} with {predict.Distance} distance");
-                                    _addToViewImageAction(imagePath, DirectoriesWithFaces, predict, location.Left, location.Top,
+                                    _addToViewImageAction(imagePath, _directoryWithFaces, predict, location.Left, location.Top,
                                                     location.Right - location.Left, location.Bottom - location.Top);
                                 }
-
-
-
 
                             }
                         }
@@ -159,7 +190,7 @@ namespace FaceRecognitionWPF
 
                             if (predict.Distance < _distanceThreshold)
                             {
-                                _addToViewImageAction(imagePath, DirectoriesWithFaces, predict,
+                                _addToViewImageAction(imagePath, _directoryWithFaces, predict,
                                     fingerAndLocations.Left, fingerAndLocations.Top,
                                     fingerAndLocations.Right - fingerAndLocations.Left,
                                     fingerAndLocations.Bottom - fingerAndLocations.Top);

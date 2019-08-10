@@ -16,11 +16,14 @@
         </Grid.ColumnDefinitions>-->
 <DockPanel>
 
-        <ProgressBar Value="{Binding ProgressValue}"
-                     DockPanel.Dock="Bottom"
+        <Grid DockPanel.Dock="Bottom">
+            <ProgressBar Value="{Binding ProgressValue}"
                      Height="10"
-                     Maximum="{Binding ProgressMaximum}"></ProgressBar>
-    
+                     Maximum="{Binding ProgressMaximum}"/>
+            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center"
+                       Text="{Binding ProgressText}"/>
+        </Grid>
+
         <FrameworkElement x:Name="dummyElement" Visibility="Collapsed"/>
 
         <Expander ExpandDirection="Right"
@@ -35,14 +38,13 @@
 
                 <StackPanel >
                 <Label>Models directory</Label>
-                <TextBox Text="{Binding ModelsDirectory}"></TextBox>
+                <TextBox Text="{Binding Configuration.ModelsDirectory, UpdateSourceTrigger=PropertyChanged}"></TextBox>
                 <Label>Train path</Label>
-                <TextBox Text="{Binding TrainPath}"></TextBox>
+                <TextBox Text="{Binding Configuration.TrainPath, UpdateSourceTrigger=PropertyChanged}"></TextBox>
                 <Label>Search path</Label>
-                <TextBox Text="{Binding SearchPath}"></TextBox>
-                <Label>Search path</Label>
+                <TextBox Text="{Binding Configuration.SearchPath, UpdateSourceTrigger=PropertyChanged}"></TextBox>
                 <Label>Distance threshold</Label>
-                <TextBox Text="{Binding DistanceThreshold}"></TextBox>
+                <TextBox Text="{Binding Configuration.DistanceThreshold, UpdateSourceTrigger=PropertyChanged}"></TextBox>
                 <Button Command="{Binding RunCommand}">Run</Button>
                 <Viewbox Grid.Row="0" Stretch="Fill">
                     <Image Source="{Binding ErrorImage, Mode=OneWay}"/>

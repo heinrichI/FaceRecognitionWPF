@@ -49,7 +49,7 @@ namespace FaceRecognitionWPF.ViewModel
 
         public FaceViewModel(string imageFile)
         {
-            Title = imageFile;
+            Title = $"Not found face in {imageFile}";
             Application.Current.Dispatcher.Invoke(() =>
             {
                 BitmapImage src = new BitmapImage();

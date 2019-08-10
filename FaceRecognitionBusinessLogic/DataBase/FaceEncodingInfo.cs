@@ -33,6 +33,6 @@ namespace FaceRecognitionBusinessLogic.DataBase
 
         public List<FingerAndLocation> FingerAndLocations { get; set; }
 
-        public List<string> NotPerson { get; set; }
+        //public List<string> NotPerson { get; set; }
     }
 }
