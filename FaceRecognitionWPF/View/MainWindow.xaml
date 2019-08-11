@@ -3,7 +3,9 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
         xmlns:local="clr-namespace:FaceRecognitionWPF.View"
+        xmlns:menu="clr-namespace:FaceRecognitionWPF.Menu"
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
     
@@ -45,10 +47,19 @@
                 <TextBox Text="{Binding Configuration.SearchPath, UpdateSourceTrigger=PropertyChanged}"></TextBox>
                 <Label>Distance threshold</Label>
                 <TextBox Text="{Binding Configuration.DistanceThreshold, UpdateSourceTrigger=PropertyChanged}"></TextBox>
+                <Label>Thread count</Label>
+                <TextBox Text="{Binding ThreadCount, UpdateSourceTrigger=PropertyChanged}"></TextBox>
                 <Button Command="{Binding RunCommand}">Run</Button>
-                <Viewbox Grid.Row="0" Stretch="Fill">
+                <GroupBox Header="Check">
+
+                    <Button >Show another class and distance more than</Button>
+                    <Label>Class</Label>
+                    <ComboBox></ComboBox>
+                </GroupBox>
+
+                <!--<Viewbox Grid.Row="0" Stretch="Fill">
                     <Image Source="{Binding ErrorImage, Mode=OneWay}"/>
-                </Viewbox>
+                </Viewbox>-->
             </StackPanel>
         </Expander>
 
@@ -98,11 +109,34 @@
                                                                   Command="{Binding DataContext.OpenImageCommand, Source={x:Reference dummyElement}}"
                                                                   CommandParameter="{Binding Path}" />
                                                     </Image.InputBindings>
-                                                </Image>
-                                                <TextBox Text="{Binding Predict, Mode=OneWay}" 
+                                                        <i:Interaction.Behaviors>
+                                                            <menu:ImageContextMenuItemSourceBindingOnOpenBehavior 
+                                                                MenuGenerator="{Binding DataContext.MenuGeneratorFaceInfo, Source={x:Reference dummyElement}}" />
+                                                        </i:Interaction.Behaviors>
+                                                        <Image.ContextMenu>
+                                                            <ContextMenu >
+                                                                <ContextMenu.ItemContainerStyle>
+                                                                    <Style TargetType="{x:Type MenuItem}">
+                                                                        <Setter Property="Command" Value="{Binding Command}" />
+                                                                        <Setter Property="Header" Value="{Binding Path=Name}" />
+                                                                        <Setter Property="ItemsSource" Value="{Binding Path=Children}" />
+                                                                    </Style>
+                                                                </ContextMenu.ItemContainerStyle>
+                                                            </ContextMenu>
+                                                        </Image.ContextMenu>
+                                                    </Image>
+                                                <!--<TextBox Text="{Binding Predict, Mode=OneWay}" 
                                                                  ToolTip="{Binding Predict, Mode=OneWay}" 
-                                                                 IsReadOnly="True"  />
-                                            </StackPanel>
+                                                                 IsReadOnly="True"  />-->
+                                                    <TextBlock>
+                                                        <TextBlock.Text>
+                                                            <MultiBinding StringFormat=" {0} {1}">
+                                                                <Binding Path="Predict"/>
+                                                                <Binding Path="Distance"/>
+                                                            </MultiBinding>
+                                                        </TextBlock.Text>
+                                                    </TextBlock>
+                                                </StackPanel>
                                         </DataTemplate>
                                     </ListBox.ItemTemplate>
                                 </ListView>

@@ -46,5 +46,16 @@ namespace FaceRecognitionBusinessLogic.ObjectModel
                 this.OnPropertyChanged();
             }
         }
+
+        double _distance;
+        public double Distance
+        {
+            get => this._distance;
+            set
+            {
+                this._distance = value;
+                this.OnPropertyChanged();
+            }
+        }
     }
 }
