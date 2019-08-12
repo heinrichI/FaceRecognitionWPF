@@ -51,10 +51,11 @@
                 <TextBox Text="{Binding ThreadCount, UpdateSourceTrigger=PropertyChanged}"></TextBox>
                 <Button Command="{Binding RunCommand}">Run</Button>
                 <GroupBox Header="Check">
-
-                    <Button >Show another class and distance more than</Button>
-                    <Label>Class</Label>
-                    <ComboBox></ComboBox>
+                    <StackPanel>
+                        <Button >Show another class and distance more than</Button>
+                        <Label>Class</Label>
+                        <ComboBox></ComboBox>
+                    </StackPanel>
                 </GroupBox>
 
                 <!--<Viewbox Grid.Row="0" Stretch="Fill">

@@ -37,7 +37,7 @@ namespace FaceRecognitionWPF
         IEnumerable<string> _classes;
         ObservableCollection<DirectoryWithFaces> _directoryWithFaces;
         Action<string, ObservableCollection<DirectoryWithFaces>,
-            VoteAndDistance, int, int, int, int> _addToViewImageAction;
+            VoteAndDistance, FaceLocation> _addToViewImageAction;
 
         public SearchManager(int threadCount,
             IConfiguration configuration,
@@ -47,7 +47,7 @@ namespace FaceRecognitionWPF
             IEnumerable<string> classes,
             ObservableCollection<DirectoryWithFaces> directoryWithFaces,
             Action<string, ObservableCollection<DirectoryWithFaces>, 
-                VoteAndDistance, int, int, int, int> addToViewImageAction)
+                VoteAndDistance, FaceLocation> addToViewImageAction)
         {
             _progress = progress;
             _db = db;
@@ -156,10 +156,13 @@ namespace FaceRecognitionWPF
                                 encoding.Dispose();
 
                                 double[] unknown = (double[])info.GetValue("_Encoding", typeof(double[]));
+                                FaceLocation faceLocation = new FaceLocation(location.Left,
+                                        location.Right,
+                                        location.Top,
+                                        location.Bottom);
                                 lock (_dbLocker)
                                 {
-                                    _db.AddFaceInfo(imagePath, unknown, location.Left, location.Right,
-                                    location.Top, location.Bottom);
+                                    _db.AddFaceInfo(imagePath, unknown, faceLocation);
                                 }
 
                                 VoteAndDistance predict = MyKnn.Classify(unknown, _trainedInfo, _classes.ToArray(), 1);
@@ -167,8 +170,7 @@ namespace FaceRecognitionWPF
                                 if (predict.Distance < _configuration.DistanceThreshold)
                                 {
                                     Debug.WriteLine($"Found {predict.Name} in {imagePath} with {predict.Distance} distance");
-                                    _addToViewImageAction(imagePath, _directoryWithFaces, predict, location.Left, location.Top,
-                                                    location.Right - location.Left, location.Bottom - location.Top);
+                                    _addToViewImageAction(imagePath, _directoryWithFaces, predict, faceLocation);
                                 }
 
                             }
@@ -183,10 +185,7 @@ namespace FaceRecognitionWPF
 
                             if (predict.Distance < _configuration.DistanceThreshold)
                             {
-                                _addToViewImageAction(imagePath, _directoryWithFaces, predict,
-                                    fingerAndLocations.Left, fingerAndLocations.Top,
-                                    fingerAndLocations.Right - fingerAndLocations.Left,
-                                    fingerAndLocations.Bottom - fingerAndLocations.Top);
+                                _addToViewImageAction(imagePath, _directoryWithFaces, predict, fingerAndLocations.Location);
 
                             }
                         }

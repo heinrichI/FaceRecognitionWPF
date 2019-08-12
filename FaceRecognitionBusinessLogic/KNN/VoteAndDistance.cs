@@ -18,5 +18,7 @@ namespace FaceRecognitionBusinessLogic.KNN
         public int Vote { get; internal set; }
 
         public double Distance { get; internal set; }
+
+        public ClassInfo ClassInfo { get; internal set; }
     }
 }

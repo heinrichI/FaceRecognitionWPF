@@ -11,6 +11,7 @@ using System.Windows;
 using FaceRecognitionBusinessLogic;
 using FaceRecognitionBusinessLogic.DataBase;
 using FaceRecognitionBusinessLogic.KNN;
+using FaceRecognitionBusinessLogic.ObjectModel;
 using FaceRecognitionDotNet;
 using FaceRecognitionWPF.View;
 using FaceRecognitionWPF.ViewModel;
@@ -108,7 +109,7 @@ namespace FaceRecognitionWPF
                     if (founded == null)
                     {
                         if (faceRecognition == null)
-                            faceRecognition = FaceRecognition.Create(_configuration.ModelsDirectory)
+                         faceRecognition = FaceRecognition.Create(_configuration.ModelsDirectory);
 
                         FaceRecognitionDotNet.Image image;
                         try
@@ -168,15 +169,18 @@ namespace FaceRecognitionWPF
                                     encoding.Dispose();
                                     var dir = Path.GetDirectoryName(imagePath);
                                     string directory = new DirectoryInfo(dir).Name;
+                                    FaceLocation faceLocation = new FaceLocation(faceBoundingBoxes.Single().Left,
+                                        faceBoundingBoxes.Single().Right,
+                                        faceBoundingBoxes.Single().Top,
+                                        faceBoundingBoxes.Single().Bottom);
                                     lock (_trainedInfoLocker)
                                     {
-                                        _trainedInfo.Add(new ClassInfo(directory, doubleInfo));
+                                        _trainedInfo.Add(new ClassInfo(directory, doubleInfo, faceLocation));
                                     }
 
                                     lock (_dbLocker)
                                     {
-                                        _db.AddFaceInfo(imagePath, doubleInfo, faceBoundingBoxes.Single().Left, faceBoundingBoxes.Single().Right,
-                                        faceBoundingBoxes.Single().Top, faceBoundingBoxes.Single().Bottom);
+                                        _db.AddFaceInfo(imagePath, doubleInfo, faceLocation);
                                     }
                                 }
                             }
@@ -189,8 +193,9 @@ namespace FaceRecognitionWPF
                         string directory = new DirectoryInfo(dir).Name;
                         lock (_trainedInfoLocker)
                         {
+                            var fingerAndLocation = founded.FingerAndLocations.Single();
                             _trainedInfo.Add(new ClassInfo(directory,
-                            founded.FingerAndLocations.Single().FingerPrint));
+                                fingerAndLocation.FingerPrint, fingerAndLocation.Location));
                         }
                     }
                 }

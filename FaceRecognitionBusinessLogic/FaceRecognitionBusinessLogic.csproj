@@ -55,6 +55,7 @@
     <Compile Include="ObjectModel\DirectoryWithFaces.cs" />
     <Compile Include="ObjectModel\FaceInfo.cs" />
     <Compile Include="ObjectModel\ImageInfo.cs" />
+    <Compile Include="ObjectModel\FaceLocation.cs" />
     <Compile Include="ProgressPartialResult.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TinyIoC.cs" />

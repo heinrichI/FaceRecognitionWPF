@@ -1,4 +1,5 @@
 ﻿using FaceRecognitionBusinessLogic.DataBase;
+using FaceRecognitionBusinessLogic.ObjectModel;
 using LiteDB;
 using System;
 using System.Collections.Generic;
@@ -62,7 +63,7 @@ namespace FaceRecognitionDataBase
         }
 
 
-        public void AddFaceInfo(string imageFile, double[] doubleInfo, int left, int right, int top, int bottom)
+        public void AddFaceInfo(string imageFile, double[] doubleInfo, FaceLocation faceLocation)
         {
             FaceEncodingInfo faceEncodingInfo = GetFromDB(imageFile);
             //if (faceEncodingInfo != null)
@@ -71,10 +72,10 @@ namespace FaceRecognitionDataBase
             if (faceEncodingInfo == null)
                 faceEncodingInfo = new FaceEncodingInfo(imageFile);
 
-            var fingerAndLocations  = _fingerCollection.Find(f => f.Left == left
-                && f.Right == right
-                && f.Top == top
-                && f.Bottom == bottom
+            var fingerAndLocations  = _fingerCollection.Find(f => f.Location.Left == faceLocation.Left
+                && f.Location.Right == faceLocation.Right
+                && f.Location.Top == faceLocation.Top
+                && f.Location.Bottom == faceLocation.Bottom
                 && f.FingerPrint.Equals(doubleInfo));
 
             FingerAndLocation fingerAndLocation;
@@ -84,19 +85,13 @@ namespace FaceRecognitionDataBase
             {
                 fingerAndLocation = new FingerAndLocation();
                 fingerAndLocation.FingerPrint = doubleInfo;
-                fingerAndLocation.Left = left;
-                fingerAndLocation.Right = right;
-                fingerAndLocation.Top = top;
-                fingerAndLocation.Bottom = bottom;
+                fingerAndLocation.Location = faceLocation;
 
                 _fingerCollection.Insert(fingerAndLocation);
             }
 
             //if (!faceEncodingInfo.FingerAndLocations.Any(fe => fe.Equals(fingerAndLocation)))
-            if (!faceEncodingInfo.FingerAndLocations.Any(fe => fe.Bottom == fingerAndLocation.Bottom
-            && fe.Left == fingerAndLocation.Left
-            && fe.Right == fingerAndLocation.Right
-            && fe.Top == fingerAndLocation.Top
+            if (!faceEncodingInfo.FingerAndLocations.Any(fe => fe.Location.Equals(fingerAndLocation)
             && fe.FingerPrint.Equals(fingerAndLocation.FingerPrint)))
                 faceEncodingInfo.FingerAndLocations.Add(fingerAndLocation);
             try

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FaceRecognitionBusinessLogic.ObjectModel;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,8 +11,7 @@ namespace FaceRecognitionBusinessLogic.DataBase
     {
         FaceEncodingInfo GetFromDB(string imageFile);
 
-        void AddFaceInfo(string imageFile, double[] doubleInfo, 
-            int left, int right, int top, int bottom);
+        void AddFaceInfo(string imageFile, double[] doubleInfo, FaceLocation faceLocation);
         void AddFileWithoutFace(string imageFile);
     }
 }

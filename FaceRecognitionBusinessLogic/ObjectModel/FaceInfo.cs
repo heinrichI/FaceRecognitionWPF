@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FaceRecognitionBusinessLogic.KNN;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -54,6 +55,17 @@ namespace FaceRecognitionBusinessLogic.ObjectModel
             set
             {
                 this._distance = value;
+                this.OnPropertyChanged();
+            }
+        }
+
+        ClassInfo _classInfo;
+        public ClassInfo ClassInfo
+        {
+            get => this._classInfo;
+            set
+            {
+                this._classInfo = value;
                 this.OnPropertyChanged();
             }
         }

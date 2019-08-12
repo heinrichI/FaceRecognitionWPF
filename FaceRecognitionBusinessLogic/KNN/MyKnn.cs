@@ -71,6 +71,7 @@ namespace FaceRecognitionBusinessLogic.KNN
                 string className = trainData[idx].Name; 
                 votes[className].Vote++;
                 votes[className].Distance =+ info[i].Distance;
+                votes[className].ClassInfo = trainData[idx];
             }
 
             //for (int p = 0; p < votes.Length; ++p)

@@ -50,7 +50,7 @@ namespace FaceRecognitionWPF.ViewModel
             _configuration.Save();
         }
 
-       
+        const int _addBorder = 30;
 
         private IProgress<ProgressPartialResult> _progress;
 
@@ -457,9 +457,8 @@ namespace FaceRecognitionWPF.ViewModel
 }
 
         private void AddToViewImage(string imageFile, ObservableCollection<DirectoryWithFaces> directoriesWithFaces, 
-            VoteAndDistance predict, int left, int top, int width, int height)
+            VoteAndDistance predict, FaceLocation faceLocation)
         {
-            const int addBorder = 30;
             //this.Invoke(new Action(() =>
             Application.Current.Dispatcher.Invoke(() =>
             {
@@ -490,52 +489,9 @@ namespace FaceRecognitionWPF.ViewModel
                     //// Crop and set the new WriteableBitmap as the image source
                     //CroppedImage.Source = CropImage(writeableBitmap, X, Y, WIDTH, HEIGHT);
 
-                    System.Drawing.Bitmap croppedImage;
+                    System.Drawing.Bitmap croppedImage = ImageHelper.GetCroppedBitmap(_addBorder, 
+                        imageFile, faceLocation.Left, faceLocation.Top, faceLocation.Width, faceLocation.Heigth);
 
-                    using (var image = System.Drawing.Image.FromFile(imageFile))
-                    using (var src = new System.Drawing.Bitmap(image))
-                    {
-                        if (left > src.Width)
-                            throw new ArgumentException("left > src.Width");
-                        if (top > src.Height)
-                            throw new ArgumentException("top > src.Height");
-                        int leftBorderAdded = left - addBorder >= 0 ? left - addBorder : left;
-                        int topBorderAdded = top - addBorder >= 0 ? top - addBorder : top;
-                        int widthBorderAdded = leftBorderAdded + width + addBorder * 2 > src.Width ?
-                          (int)src.Width - leftBorderAdded : width + addBorder * 2;
-                        int heightBorderAdded = topBorderAdded + height + addBorder * 2 > src.Height ?
-                            (int)src.Height - topBorderAdded : height + addBorder * 2;
-
-                        if (leftBorderAdded + widthBorderAdded > (int)src.Width)
-                            throw new ArgumentException("leftBorderAdded + widthBorderAdded > (int)src.Width");
-                        if (topBorderAdded + heightBorderAdded > (int)src.Height)
-                            throw new ArgumentException("topBorderAdded + heightBorderAdded > (int)src.Height");
-                        //CroppedBitmap cropped = new CroppedBitmap(src, new Int32Rect(leftBorderAdded, topBorderAdded,
-                        //    widthBorderAdded, heightBorderAdded));
-                        System.Drawing.Rectangle croppedRect = new System.Drawing.Rectangle(leftBorderAdded, topBorderAdded,
-                            widthBorderAdded, heightBorderAdded);
-                        croppedImage = new System.Drawing.Bitmap(widthBorderAdded, heightBorderAdded);
-                        using (System.Drawing.Graphics g = System.Drawing.Graphics.FromImage(croppedImage))
-                        {
-                            g.DrawImage(image, new System.Drawing.Rectangle(0, 0, widthBorderAdded, heightBorderAdded),
-                                croppedRect,
-                                System.Drawing.GraphicsUnit.Pixel);
-                        }
-
-                        //var resized = new Bitmap(size, size);
-                        //var resizedPalette = resized.Palette;
-                        //using (var graphics = Graphics.FromImage(resized))
-                        //{
-                        //    graphics.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighSpeed;
-                        //    graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-                        //    graphics.CompositingMode = System.Drawing.Drawing2D.CompositingMode.SourceCopy;
-                        //    graphics.DrawImage(croppedImage, 0, 0, size, size);
-                        //    using (var output = System.IO.File.Open(thumbnailPath, FileMode.Create))
-                        //    {
-                        //        resized.Save(output, System.Drawing.Imaging.ImageFormat.Jpeg);
-                        //    }
-                        //}
-                    }
 
                     //if (src.CanFreeze)
                     //    src.Freeze();
@@ -584,7 +540,8 @@ namespace FaceRecognitionWPF.ViewModel
                         Image = imageSource,
                         Path = imageFile,
                         Predict = predict.Name,
-                        Distance = predict.Distance
+                        Distance = predict.Distance,
+                        ClassInfo = predict.ClassInfo
                     });
                 }
                 catch (Exception ex)
@@ -608,7 +565,9 @@ namespace FaceRecognitionWPF.ViewModel
                     {
                         ICommand saveAsPredictedCommand = new RelayCommand(arg =>
                         {
-                            ImageHelper.SaveToClass(faceInfo.Predict, _configuration.TrainPath, fileName, faceInfo.Location);
+                            ImageHelper.SaveToClass(faceInfo.Predict, 
+                                _configuration.TrainPath,
+                                faceInfo.Path, faceInfo.ClassInfo.FaceLocation, _addBorder);
                             //BitmapEncoder encoder = new JpegBitmapEncoder();
                             //encoder.Frames.Add(BitmapFrame.Create((BitmapSource)faceInfo.Image));
                             //string fileName = Path.GetFileName(faceInfo.Path);
@@ -622,22 +581,32 @@ namespace FaceRecognitionWPF.ViewModel
                             _lastSavedClass = faceInfo.Predict;
                         });
 
-                        BindableMenuItem[] menu = new BindableMenuItem[2];
-                        menu[0] = new BindableMenuItem();
-                        menu[0].Name = $"Save as {faceInfo.Predict}";
-                        menu[0].Command = saveAsPredictedCommand;
+                        List<BindableMenuItem> menu = new List<BindableMenuItem>();
+                        BindableMenuItem menuItem1 = new BindableMenuItem();
+                        menuItem1.Name = $"Save as {faceInfo.Predict}";
+                        menuItem1.Command = saveAsPredictedCommand;
+                        menu.Add(menuItem1);
 
-                        ICommand saveAsCommand = new RelayCommand(arg =>
+                        if (!String.IsNullOrEmpty(_lastSavedClass))
                         {
+                            BindableMenuItem menuItem2 = new BindableMenuItem();
+                            menuItem2.Name = $"Save as {_lastSavedClass}";
+                            //menuItem2.Command = saveAsPredictedCommand;
+                            menu.Add(menuItem2);
+                        }
 
-                        }, arg => _windowService != null);
-                        menu[1] = new BindableMenuItem();
-                        menu[1].Name = "Save as...";
-                        //menu[1].Command = saveAsCommand;
-                        menu[1].Children =
-                        либо окно с ыфбром классов все же показывать
+                        //ICommand saveAsCommand = new RelayCommand(arg =>
+                        //{
 
-                        return menu;
+                        //}, arg => _windowService != null);
+                        //BindableMenuItem menuItem3 = new BindableMenuItem();
+                        //menuItem3.Name = "Save as...";
+                        ////menu[1].Command = saveAsCommand;
+                        //menuItem3.Children =
+                        //либо окно с ыфбром классов все же показывать
+                        // menu.Add(menuItem2);
+
+                        return menu.ToArray();
                     }
                     return null;
                 });

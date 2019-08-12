@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FaceRecognitionBusinessLogic.ObjectModel;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,12 +9,13 @@ namespace FaceRecognitionBusinessLogic.KNN
 {
     public class ClassInfo
     {
-        public ClassInfo(string className, double[] data)
+        public ClassInfo(string className, double[] data, FaceLocation faceLocation)
         {
             Name = className;
             Data = data;
             //Data = new List<double>();
             //Encodings = new List<FaceEncoding>();
+            FaceLocation = faceLocation;
         }
 
         public string Name { get; }
@@ -23,5 +25,7 @@ namespace FaceRecognitionBusinessLogic.KNN
         public double[] Data { get; }
 
         //public List<FaceEncoding> Encodings { get; }
+
+        public FaceLocation FaceLocation { get; }
     }
 }
