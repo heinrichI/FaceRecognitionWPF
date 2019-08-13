@@ -180,7 +180,8 @@ namespace FaceRecognitionWPF
 
                                     lock (_dbLocker)
                                     {
-                                        _db.AddFaceInfo(imagePath, doubleInfo, faceLocation);
+                                        _db.AddFaceInfo(imagePath, doubleInfo, faceBoundingBoxes.Single().Left, faceBoundingBoxes.Single().Right,
+                                        faceBoundingBoxes.Single().Top, faceBoundingBoxes.Single().Bottom);
                                     }
                                 }
                             }
@@ -194,8 +195,10 @@ namespace FaceRecognitionWPF
                         lock (_trainedInfoLocker)
                         {
                             var fingerAndLocation = founded.FingerAndLocations.Single();
-                            _trainedInfo.Add(new ClassInfo(directory,
-                                fingerAndLocation.FingerPrint, fingerAndLocation.Location));
+                            FaceLocation faceLocation = new FaceLocation(fingerAndLocation.Left,
+                                fingerAndLocation.Right, fingerAndLocation.Top, fingerAndLocation.Bottom);
+                        _trainedInfo.Add(new ClassInfo(directory,
+                                fingerAndLocation.FingerPrint, faceLocation));
                         }
                     }
                 }

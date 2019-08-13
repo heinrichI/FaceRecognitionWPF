@@ -28,15 +28,15 @@ namespace FaceRecognitionBusinessLogic.ObjectModel
         ////     Gets the y-axis value of the top of the rectangle of face.
         public int Top { get; }
 
-        public int Width
-        {
-            get { return Right - Left; }
-        }
+        //public int Width
+        //{
+        //    get { return Right - Left; }
+        //}
 
-        public int Heigth
-        {
-            get { return Bottom - Top; }
-        }
+        //public int Heigth
+        //{
+        //    get { return Bottom - Top; }
+        //}
 
         public override bool Equals(Object obj)
         {

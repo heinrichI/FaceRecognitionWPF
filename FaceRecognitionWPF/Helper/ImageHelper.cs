@@ -46,7 +46,8 @@ namespace FaceRecognitionWPF.Helper
                 throw new Exception($"File {targetPathSimilar} already exist!");
 
             var cropped = GetCroppedBitmap(addBorder, imagePath, 
-                faceLocation.Left, faceLocation.Top, faceLocation.Width, faceLocation.Heigth);
+                faceLocation.Left, faceLocation.Top, faceLocation.Right - faceLocation.Left, 
+                faceLocation.Bottom - faceLocation.Top);
 
             ImageCodecInfo jpgEncoder = GetEncoder(ImageFormat.Jpeg);
 

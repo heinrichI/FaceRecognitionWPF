@@ -457,7 +457,7 @@ namespace FaceRecognitionWPF.ViewModel
 }
 
         private void AddToViewImage(string imageFile, ObservableCollection<DirectoryWithFaces> directoriesWithFaces, 
-            VoteAndDistance predict, FaceLocation faceLocation)
+            VoteAndDistance predict, int left, int top, int width, int height)
         {
             //this.Invoke(new Action(() =>
             Application.Current.Dispatcher.Invoke(() =>
@@ -490,7 +490,7 @@ namespace FaceRecognitionWPF.ViewModel
                     //CroppedImage.Source = CropImage(writeableBitmap, X, Y, WIDTH, HEIGHT);
 
                     System.Drawing.Bitmap croppedImage = ImageHelper.GetCroppedBitmap(_addBorder, 
-                        imageFile, faceLocation.Left, faceLocation.Top, faceLocation.Width, faceLocation.Heigth);
+                        imageFile, left, top, width, height);
 
 
                     //if (src.CanFreeze)
