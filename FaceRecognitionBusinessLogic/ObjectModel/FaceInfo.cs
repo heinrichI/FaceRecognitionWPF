@@ -59,15 +59,15 @@ namespace FaceRecognitionBusinessLogic.ObjectModel
             }
         }
 
-        ClassInfo _classInfo;
-        public ClassInfo ClassInfo
-        {
-            get => this._classInfo;
-            set
-            {
-                this._classInfo = value;
-                this.OnPropertyChanged();
-            }
-        }
+        public int Left { get; set; }
+
+        public int Top { get; set; }
+
+        public int Width { get; set; }
+
+        public int Height { get; set; }
+
+        public List<ClassInfo> SortedInfos { get; set; }
+        public double[] TestData { get; set; }
     }
 }

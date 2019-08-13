@@ -17,9 +17,9 @@ using System.Windows;
 
 namespace FaceRecognitionWPF
 {
-    public class SearchManager
+    public class SearchManager : BaseManager
     {
-        static object _searchStackLocker = new object();
+        static object _searchQueueLocker = new object();
         static object _dbLocker = new object();
         static object _progressLocker = new object();
 
@@ -31,8 +31,6 @@ namespace FaceRecognitionWPF
 
         IDataBaseManager _db;
         IConfiguration _configuration;
-        IFormatterConverter _formatterConverter = new FormatterConverter();
-        StreamingContext _context = new StreamingContext();
         List<ClassInfo> _trainedInfo;
         IEnumerable<string> _classes;
         ObservableCollection<DirectoryWithFaces> _directoryWithFaces;
@@ -67,23 +65,10 @@ namespace FaceRecognitionWPF
             //_searchStack.Reverse();
             _searchQueue = new Queue<string>(searchFiles);
 
-            Thread[] threads = new Thread[threadCount];
-
-            for (int i = 0; i < threadCount; i++)
-            {
-                threads[i] = new Thread(ThreadWork);
-                threads[i].IsBackground = true;
-                threads[i].Priority = ThreadPriority.Lowest;
-                threads[i].Start();
-            }
-
-            for (int i = 0; i < threadCount; i++)
-            {
-                threads[i].Join();
-            }
+            base.StartThreads(threadCount);
         }
 
-        public void ThreadWork()
+        public override void ThreadWork()
         {
             string imagePath;
 
@@ -91,7 +76,7 @@ namespace FaceRecognitionWPF
             {
                 while (true)
                 {
-                    lock (_searchStackLocker)
+                    lock (_searchQueueLocker)
                     {
                         if (_searchQueue.Count > 0)
                             imagePath = _searchQueue.Dequeue();
@@ -187,7 +172,6 @@ namespace FaceRecognitionWPF
                                     fingerAndLocations.Left, fingerAndLocations.Top,
                                     fingerAndLocations.Right - fingerAndLocations.Left,
                                     fingerAndLocations.Bottom - fingerAndLocations.Top);
-
                             }
                         }
                     }

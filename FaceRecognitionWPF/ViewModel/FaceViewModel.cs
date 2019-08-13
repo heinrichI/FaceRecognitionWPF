@@ -8,6 +8,7 @@ using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using FaceRecognitionBusinessLogic;
+using FaceRecognitionBusinessLogic.ObjectModel;
 using FaceRecognitionDotNet;
 
 namespace FaceRecognitionWPF.ViewModel
@@ -47,6 +48,35 @@ namespace FaceRecognitionWPF.ViewModel
             });
         }
 
+        public FaceViewModel(FaceLocation faceLocation, string imagePath)
+        {
+            Title = imagePath;
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                BitmapImage src = new BitmapImage();
+                src.BeginInit();
+                src.UriSource = new Uri(imagePath, UriKind.Absolute);
+                src.CacheOption = BitmapCacheOption.OnLoad;
+                src.EndInit();
+
+                DrawingVisual dv = new DrawingVisual();
+                using (DrawingContext dc = dv.RenderOpen())
+                {
+                    dc.DrawImage(src, new Rect(0, 0, src.PixelWidth, src.PixelHeight));
+                    dc.DrawRectangle(System.Windows.Media.Brushes.Green, null, 
+                        new Rect(faceLocation.Left,
+                        faceLocation.Top, faceLocation.Right - faceLocation.Left,
+                        faceLocation.Bottom - faceLocation.Top));
+                }
+
+                RenderTargetBitmap rtb = new RenderTargetBitmap(src.PixelWidth, src.PixelHeight, 96, 96,
+                    PixelFormats.Pbgra32);
+                rtb.Render(dv);
+
+                Image = rtb;
+            });
+        }
+
         public FaceViewModel(string imageFile)
         {
             Title = $"Not found face in {imageFile}";
@@ -79,8 +109,6 @@ namespace FaceRecognitionWPF.ViewModel
         }
 
         string _title;
-        private string imageFile;
-
         public string Title
         {
             get => this._title;

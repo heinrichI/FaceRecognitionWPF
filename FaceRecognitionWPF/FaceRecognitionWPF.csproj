@@ -75,6 +75,8 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="BaseManager.cs" />
+    <Compile Include="CheckManager.cs" />
     <Compile Include="Helper\RenameHelper.cs" />
     <Compile Include="Menu\ImageContextMenuItemSourceBindingOnOpenBehavior.cs" />
     <Compile Include="Helper\ImageHelper.cs" />
@@ -85,12 +87,16 @@
     <Compile Include="ViewModel\ClassSelecterViewModel.cs" />
     <Compile Include="ViewModel\FaceViewModel.cs" />
     <Compile Include="ViewModel\IClosingViewModel.cs" />
+    <Compile Include="ViewModel\InfoViewModel.cs" />
     <Compile Include="ViewModel\MainViewModel.cs" />
     <Compile Include="View\ClassSelecterWindow.xaml.cs">
       <DependentUpon>ClassSelecterWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="View\FaceWindow.xaml.cs">
       <DependentUpon>FaceWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="View\InfoWindow.xaml.cs">
+      <DependentUpon>InfoWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="View\MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
@@ -105,6 +111,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="View\FaceWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="View\InfoWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

@@ -42,6 +42,9 @@ namespace FaceRecognitionWPF.ViewModel
                 //ProgressValueTaskbar = (double)result.Current / (double)result.Total;
                 ProgressText = String.Format("{0} / {1}  {2}", result.Current, result.Total, result.Text);
             });
+
+            System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+            DlibDotNet.Dlib.Encoding = System.Text.Encoding.GetEncoding(1251);
         }
 
 
@@ -50,7 +53,9 @@ namespace FaceRecognitionWPF.ViewModel
             _configuration.Save();
         }
 
-        const int _addBorder = 30;
+        const float _percentageOfBorder = 0.3F;
+
+        IEnumerable<string> _classes;
 
         private IProgress<ProgressPartialResult> _progress;
 
@@ -77,17 +82,6 @@ namespace FaceRecognitionWPF.ViewModel
         public int ThumbnailWidth
         {
             get => 150;
-        }
-
-        int _threadCount = Environment.ProcessorCount;
-        public int ThreadCount
-        {
-            get => this._threadCount;
-            set
-            {
-                this._threadCount = value;
-                this.OnPropertyChanged();
-            }
         }
 
         ICommand _openImageCommand;
@@ -151,7 +145,7 @@ namespace FaceRecognitionWPF.ViewModel
                 this.OnPropertyChanged();
             }
         }
-        
+
 
         private RelayCommand _runCommand;
         public RelayCommand RunCommand
@@ -170,281 +164,33 @@ namespace FaceRecognitionWPF.ViewModel
 
                         await Task.Run(() =>
                         {
-                            System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
-                            DlibDotNet.Dlib.Encoding = System.Text.Encoding.GetEncoding(1251);
-
-                            IFormatterConverter formatterConverter = new FormatterConverter();
-                            StreamingContext context = new StreamingContext();
-
 
                             using (var db = TinyIoC.TinyIoCContainer.Current.Resolve<IDataBaseManager>(
                                 new NamedParameterOverloads() { { "dataBaseName", "faces.litedb" } }))
                             {
                                 List<ClassInfo> trainedInfo = new List<ClassInfo>();
-                                IEnumerable<string> classes;
 
-                                TrainManager trainManager = new TrainManager(ref trainedInfo, out classes,
-                                    ThreadCount, _configuration, db, _progress, _windowService);
-
-                                //using (var faceRecognition = FaceRecognition.Create(_configuration.ModelsDirectory))
-                                //{
-                                //    var directories = System.IO.Directory.GetDirectories(_configuration.TrainPath);
-                                //    classes = directories.Select(d => new DirectoryInfo(d).Name);
-
-                                //    ProgressMaximum = directories.Length;
-                                //    int current = 0;
-                                //    foreach (var directory in directories)
-                                //    {
-                                //        ProgressValue = current;
-                                //        current++;
-
-                                //        var files = System.IO.Directory.GetFiles(directory);
-
-                                //        foreach (var imageFile in files)
-                                //        {
-                                //            ProgressText = imageFile;
-
-                                //            FaceEncodingInfo founded = db.GetFromDB(imageFile);
-                                //            if (founded == null)
-                                //            {
-                                //                using (var image = FaceRecognition.LoadImageFile(imageFile))
-                                //                {
-                                //                    Debug.WriteLine($"Train on {imageFile}");
-                                //                //var sw = new Stopwatch();
-                                //                //sw.Start();
-
-                                //                var faceBoundingBoxes = faceRecognition.FaceLocations(image, 
-                                //                    1, Model.Hog);
-
-                                //                //Bitmap source = new Bitmap(imageFile);
-                                //                //Bitmap croppedImage = source.Clone(
-                                //                //    new System.Drawing.Rectangle(location.Left, location.Top,
-                                //                //    location.Right - location.Left, location.Bottom - location.Top), source.PixelFormat);
-
-                                //                var countOfFace = faceBoundingBoxes.Count();
-                                //                    if (countOfFace == 0)
-                                //                    {
-                                //                        Application.Current.Dispatcher.Invoke(() =>
-                                //                        {
-                                //                            FaceViewModel vm = new FaceViewModel(imageFile);
-                                //                            _windowService.ShowDialogWindow<FaceWindow>(vm);
-                                //                        });
-                                //                        continue;
-                                //                    //throw new Exception($"Not founded face in {imageFile}");
-                                //                }
-
-                                //                if (countOfFace > 1)
-                                //                {
-                                //                    Application.Current.Dispatcher.Invoke(() =>
-                                //                    {
-                                //                        FaceViewModel vm = new FaceViewModel(faceBoundingBoxes, imageFile);
-                                //                        _windowService.ShowDialogWindow<FaceWindow>(vm);
-                                //                    });
-
-                                //                    continue;
-                                //                    //If there are no people (or too many people) in a training image, skip the image.
-                                //                    //throw new Exception($"Faces {countOfFace} > 1 in {imageFile}");
-                                //                }
-                                //                //print("Image {} not suitable for training: {}".format(img_path, "Didn't find a face" if len(face_bounding_boxes) < 1 else "Found more than one face"))
-                                //                else
-                                //                    {
-                                //                    // Add face encoding for current image to the training set
-                                //                    var encodings = faceRecognition.FaceEncodings(image, faceBoundingBoxes);
-                                //                        if (encodings == null)
-                                //                            continue;
-
-                                //                        foreach (var encoding in encodings)
-                                //                        {
-                                //                            //IFormatterConverter formatterConverter = new FormatterConverter();
-                                //                            var info = new SerializationInfo(typeof(double), formatterConverter);
-                                //                            //StreamingContext context = new StreamingContext();
-                                //                            encoding.GetObjectData(info, context);
-
-                                //                            double[] doubleInfo = (double[])info.GetValue("_Encoding", typeof(double[]));
-                                //                            //ci.Data.AddRange(doubleInfo);
-                                //                            trainedInfo.Add(new ClassInfo(new DirectoryInfo(directory).Name, doubleInfo));
-                                //                                encoding.Dispose();
+                                TrainManager trainManager = new TrainManager(ref trainedInfo, out _classes,
+                                    _configuration.ThreadCount, _configuration, db, _progress, _windowService);
 
 
-                                //                                db.AddFaceInfo(imageFile, doubleInfo, faceBoundingBoxes.Single().Left, faceBoundingBoxes.Single().Right,
-                                //                                    faceBoundingBoxes.Single().Top, faceBoundingBoxes.Single().Bottom);
-
-
-                                //                        }
-
-                                //                    //faceCollection.Insert()
-                                //                }
-
-                                //                //sw.Stop();
-
-                                //                //var total = sw.ElapsedMilliseconds;
-                                //                //Console.WriteLine($"Total: {total} [ms]");
-                                //            }
-                                //            }
-                                //            else
-                                //            {
-                                //                Debug.WriteLine($"File {imageFile} in db");
-                                //                trainedInfo.Add(new ClassInfo(new DirectoryInfo(directory).Name,
-                                //                    founded.FingerAndLocations.Single().FingerPrint));
-                                //            }
-
-                                //        //using (var faceDetector = Dlib.GetFrontalFaceDetector())
-                                //        //using (var data = new MemoryStream(File.ReadAllBytes(imageFile)))
-                                //        //{
-                                //        //    // DlibDotNet can create Array2D from file but this sample demonstrate
-                                //        //    // converting managed image class to dlib class and vice versa.
-                                //        //    var bitmap = new WriteableBitmap(BitmapFrame.Create(data));
-                                //        //    using (var image = bitmap.ToArray2D<RgbPixel>())
-                                //        //    {
-                                //        //        var dets = faceDetector.Operator(image);
-                                //        //        foreach (var r in dets)
-                                //        //            Dlib.DrawRectangle(image, r, new RgbPixel { Green = 255 });
-
-                                //        //        var result = image.ToWriteableBitmap();
-                                //        //        if (result.CanFreeze)
-                                //        //            result.Freeze();
-                                //        //        Application.Current.Dispatcher.Invoke(() =>
-                                //        //        {
-                                //        //            this.Image = result;
-                                //        //        });
-                                //        //    }
-                                //        //}
-                                //    }
-                                //}
-
-
-                                //var ext = new List<string> { ".jpg", ".jpeg", ".png" };
-                                //var searchFiles = System.IO.Directory.GetFiles(SearchPath, "*", SearchOption.AllDirectories)
-                                //.Where(s => ext.Contains(Path.GetExtension(s)));
-                                //    //string imageFile3 = @"d:\Борисов\WallpapersSort\body\-11072550_376068146.jpg";
-
-                                //    int progressCount = 0;
-                                //    ProgressMaximum = searchFiles.Count();
-                                //foreach (var imageFile in searchFiles)
-                                //    {
-                                //        progress.Report(progressCount);
-                                //        progressCount++;
-
-                                //        //load image
-                                //        //using (var ms = new MemoryStream(File.ReadAllBytes(imageFile3)))
-                                //        FaceEncodingInfo founded = db.GetFromDB(imageFile);
-                                //        if (founded == null)
-                                //        {
-                                //            FaceRecognitionDotNet.Image unknownImage;
-                                //            try
-                                //            {
-                                //                unknownImage = FaceRecognition.LoadImageFile(imageFile);
-                                //            }
-                                //            catch (Exception ex)
-                                //            {
-                                //                MessageBox.Show($"{ex.Message} \n {ex.StackTrace} \n {ex?.InnerException?.Message}", "Uncaught Thread Exception",
-                                //                    MessageBoxButton.OK, MessageBoxImage.Error);
-                                //                continue;
-                                //            }
-                                //            using (unknownImage)
-                                //        //using (var unknownImage = FaceRecognition.LoadImage(ms))
-                                //        {
-                                //                Debug.WriteLine($"Read {imageFile}");
-                                //                //find face locations
-                                //                var locations = faceRecognition.FaceLocations(unknownImage);
-                                //                //# If no faces are found in the image, return an empty result.
-                                //                if (!locations.Any())
-                                //                {
-                                //                    Debug.WriteLine($"In {imageFile} not found faces");
-                                //                    db.AddFileWithoutFace(imageFile);
-                                //                    continue;
-                                //                }
-
-                                //                foreach (var location in locations)
-                                //                {
-                                //                    var encodings = faceRecognition.FaceEncodings(unknownImage, new Location[] { location });
-                                //                    if (encodings == null)
-                                //                        continue;
-
-                                //                    var encoding = encodings.Single();
-                                //                    //foreach (var encoding in encodings)
-                                                    
-                                //                    var info = new SerializationInfo(typeof(double), formatterConverter);
-                                //                    encoding.GetObjectData(info, context);
-                                //                    encoding.Dispose();
-
-                                //                    double[] unknown = (double[])info.GetValue("_Encoding", typeof(double[]));
-                                //                    db.AddFaceInfo(imageFile, unknown, location.Left, location.Right,
-                                //                        location.Top, location.Bottom);
-
-                                //                    VoteAndDistance predict = MyKnn.Classify(unknown, trainedInfo, classes.ToArray(), 1);
-
-                                //                    if (predict.Distance < DistanceThreshold)
-                                //                    {
-                                //                        Debug.WriteLine($"Found {predict.Name} in {imageFile} with {predict.Distance} distance");
-                                //                        AddToViewImage(imageFile, DirectoriesWithFaces, predict, location.Left, location.Top,
-                                //                                        location.Right - location.Left, location.Bottom - location.Top);
-                                //                    }
-
-                                //                    //using (var data = new MemoryStream(File.ReadAllBytes(imageFile)))
-                                //                    //{
-                                //                    //    // DlibDotNet can create Array2D from file but this sample demonstrate
-                                //                    //    // converting managed image class to dlib class and vice versa.
-                                //                    //    var bitmap = new WriteableBitmap(BitmapFrame.Create(data));
-                                //                    //    using (var image = bitmap.ToArray2D<RgbPixel>())
-                                //                    //    {
-                                //                    //        WriteableBitmap.Create()
-                                //                    //        var dets = faceDetector.Operator(image);
-                                //                    //        foreach (var r in dets)
-                                //                    //            Dlib.DrawRectangle(image, r, new RgbPixel { Green = 255 });
-
-                                //                    //        var result = image.ToWriteableBitmap();
-                                //                    //        if (result.CanFreeze)
-                                //                    //            result.Freeze();
-                                //                    //        Application.Current.Dispatcher.Invoke(() =>
-                                //                    //        {
-                                //                    //            this.Image = result;
-                                //                    //        });
-                                //                    //    }
-                                                    
-                                           
-                                //                }
-                                //            }
-                                //        }
-                                //        else
-                                //        {
-                                //            foreach (var fingerAndLocations in founded.FingerAndLocations)
-                                //            {
-                                //                VoteAndDistance predict = MyKnn.Classify(fingerAndLocations.FingerPrint,
-                                //                    trainedInfo, classes.ToArray(), 1);
-
-                                //                if (predict.Distance < DistanceThreshold)
-                                //                {
-                                //                    AddToViewImage(imageFile, DirectoriesWithFaces, predict,
-                                //                        fingerAndLocations.Left, fingerAndLocations.Top,
-                                //                        fingerAndLocations.Right - fingerAndLocations.Left,
-                                //                        fingerAndLocations.Bottom - fingerAndLocations.Top);
-
-                                //                }
-                                //            }
-                                //        }
-
-                                    //int predicted = KNN.KNN.Classify(unknown, trainData, numClasses, k);
-                                //}
-                                //}
-
-                                SearchManager sm = new SearchManager(ThreadCount, _configuration, _progress, 
-                                    db, trainedInfo, classes, 
+                                SearchManager sm = new SearchManager(_configuration.ThreadCount, _configuration, _progress,
+                                    db, trainedInfo, _classes,
                                     DirectoriesWithFaces, AddToViewImage);
                             }
 
 
 
                             MessageBox.Show("Done!");
-                    });
-                    //.ContinueWith(c =>
-                    //{
-                    //    AggregateException exception = c.Exception;
+                        });
+                        //.ContinueWith(c =>
+                        //{
+                        //    AggregateException exception = c.Exception;
 
-                    //    System.Windows.MessageBox.Show($"{exception.Message} \n {exception.StackTrace}",
-                    //        "Uncaught Thread Exception", System.Windows.MessageBoxButton.OK,
-                    //        System.Windows.MessageBoxImage.Error);
-                    //}, TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously);
+                        //    System.Windows.MessageBox.Show($"{exception.Message} \n {exception.StackTrace}",
+                        //        "Uncaught Thread Exception", System.Windows.MessageBoxButton.OK,
+                        //        System.Windows.MessageBoxImage.Error);
+                        //}, TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously);
 
                     }
                     catch (Exception ex)
@@ -454,68 +200,23 @@ namespace FaceRecognitionWPF.ViewModel
                     }
                 }, (arg) => true));
             }
-}
+        }
 
-        private void AddToViewImage(string imageFile, ObservableCollection<DirectoryWithFaces> directoriesWithFaces, 
+        private void AddToViewImage(string imageFile, ObservableCollection<DirectoryWithFaces> directoriesWithFaces,
             VoteAndDistance predict, int left, int top, int width, int height)
         {
+            //Debug.WriteLine($"Добавление на форму {imageFile} left={left}, top={top}, width={width}, height={height}");
+            //Debug.WriteLine($"{imageFile} predict left={predict.ClassInfo.FaceLocation.Left}, top={predict.ClassInfo.FaceLocation.Top}, right={predict.ClassInfo.FaceLocation.Right}, bottom={predict.ClassInfo.FaceLocation.Bottom}");
+            //if (left != predict.ClassInfo.FaceLocation.Left)
+            //    throw new ArgumentException($"Неправильно переданы координаты для {imageFile} {left} != {predict.ClassInfo.FaceLocation.Left}");
             //this.Invoke(new Action(() =>
             Application.Current.Dispatcher.Invoke(() =>
             {
                 //Image = new BitmapImage(croppedImage);
                 try
                 {
-                    //BitmapImage src = new BitmapImage();
-                    //src.BeginInit();
-                    //src.UriSource = new Uri(imageFile, UriKind.Relative);
-                    //src.CacheOption = BitmapCacheOption.OnLoad;
-                    //src.EndInit();
-
-                    //var src = new BitmapImage();
-                    //using (var stream = File.OpenRead(imageFile))
-                    //{
-                    //    src.BeginInit();
-                    //    src.CacheOption = BitmapCacheOption.OnLoad;
-                    //    src.StreamSource = stream;
-                    //    src.EndInit();
-                    //    stream.Close();
-                    //}
-
-                    // Create an instance of WriteableBitmap from the original image.
-                    // If you want to Skew or Rotate the cropped image, specify it as the second parameter.
-                    // Just pass "null" if you want to use the original image directly.
-                    //var writeableBitmap = new WriteableBitmap(src, null);
-
-                    //// Crop and set the new WriteableBitmap as the image source
-                    //CroppedImage.Source = CropImage(writeableBitmap, X, Y, WIDTH, HEIGHT);
-
-                    System.Drawing.Bitmap croppedImage = ImageHelper.GetCroppedBitmap(_addBorder, 
+                    System.Drawing.Bitmap croppedImage = ImageHelper.GetCroppedBitmap(_percentageOfBorder,
                         imageFile, left, top, width, height);
-
-
-                    //if (src.CanFreeze)
-                    //    src.Freeze();
-
-                    //if (left > src.PixelWidth)
-                    //    throw new ArgumentException("left > src.Width");
-                    //if (top > src.PixelHeight)
-                    //    throw new ArgumentException("top > src.Height");
-                    //int leftBorderAdded = left - addBorder >= 0 ? left - addBorder : left;
-                    //int topBorderAdded = top - addBorder >= 0 ? top - addBorder : top;
-                    //int widthBorderAdded = leftBorderAdded + width + addBorder * 2 > src.PixelWidth ?
-                    //  (int)src.PixelWidth - leftBorderAdded : width + addBorder * 2;
-                    //int heightBorderAdded = topBorderAdded + height + addBorder * 2 > src.PixelHeight ?
-                    //    (int)src.PixelHeight - topBorderAdded : height + addBorder * 2;
-
-                    //if (leftBorderAdded + widthBorderAdded > (int)src.PixelWidth)
-                    //    throw new ArgumentException("leftBorderAdded + widthBorderAdded > (int)src.Width");
-                    //if (topBorderAdded + heightBorderAdded > (int)src.PixelHeight)
-                    //    throw new ArgumentException("topBorderAdded + heightBorderAdded > (int)src.Height");
-                    //CroppedBitmap cropped = new CroppedBitmap(src, new Int32Rect(leftBorderAdded, topBorderAdded,
-                    //    widthBorderAdded, heightBorderAdded));
-
-                    //src = null;
-                    //this.Image = cropped;
 
                     string directory = Path.GetDirectoryName(imageFile);
                     var dirWithFaces = directoriesWithFaces
@@ -526,13 +227,6 @@ namespace FaceRecognitionWPF.ViewModel
                         directoriesWithFaces.Add(dirWithFaces);
                     }
 
-                    //var image = dirWithFaces.Images.SingleOrDefault(im => im.Path == imageFile);
-                    //if (image == null)
-                    //{
-                    //    image = new ImageInfo(imageFile);
-                    //    dirWithFaces.Images.Add(image);
-                    //}
-
                     ImageSource imageSource = ImageHelper.GetImageStream(croppedImage);
                     croppedImage.Dispose();
                     dirWithFaces.Faces.Add(new FaceInfo()
@@ -541,7 +235,12 @@ namespace FaceRecognitionWPF.ViewModel
                         Path = imageFile,
                         Predict = predict.Name,
                         Distance = predict.Distance,
-                        ClassInfo = predict.ClassInfo
+                        Left = left,
+                        Top = top,
+                        Width = width,
+                        Height = height,
+                        SortedInfos = predict.SortedInfos,
+                        TestData = predict.TestData
                     });
                 }
                 catch (Exception ex)
@@ -565,9 +264,13 @@ namespace FaceRecognitionWPF.ViewModel
                     {
                         ICommand saveAsPredictedCommand = new RelayCommand(arg =>
                         {
-                            ImageHelper.SaveToClass(faceInfo.Predict, 
+                            //Debug.WriteLine($"Сохранения изображения {faceInfo.Path} c координатами left={faceInfo.ClassInfo.FaceLocation.Left}, top={faceInfo.ClassInfo.FaceLocation.Top}, right={faceInfo.ClassInfo.FaceLocation.Right}, bottom={faceInfo.ClassInfo.FaceLocation.Bottom}");
+                            //FaceViewModel vm = new FaceViewModel(faceInfo.ClassInfo.FaceLocation, faceInfo.Path);
+                            //_windowService.ShowDialogWindow<FaceWindow>(vm);
+
+                            ImageHelper.SaveToClass(faceInfo.Predict,
                                 _configuration.TrainPath,
-                                faceInfo.Path, faceInfo.ClassInfo.FaceLocation, _addBorder);
+                                faceInfo.Path, _percentageOfBorder, faceInfo.Left, faceInfo.Top, faceInfo.Width, faceInfo.Height);
                             //BitmapEncoder encoder = new JpegBitmapEncoder();
                             //encoder.Frames.Add(BitmapFrame.Create((BitmapSource)faceInfo.Image));
                             //string fileName = Path.GetFileName(faceInfo.Path);
@@ -587,7 +290,7 @@ namespace FaceRecognitionWPF.ViewModel
                         menuItem1.Command = saveAsPredictedCommand;
                         menu.Add(menuItem1);
 
-                        if (!String.IsNullOrEmpty(_lastSavedClass))
+                        if (!String.IsNullOrEmpty(_lastSavedClass) && faceInfo.Predict != _lastSavedClass)
                         {
                             BindableMenuItem menuItem2 = new BindableMenuItem();
                             menuItem2.Name = $"Save as {_lastSavedClass}";
@@ -595,22 +298,65 @@ namespace FaceRecognitionWPF.ViewModel
                             menu.Add(menuItem2);
                         }
 
-                        //ICommand saveAsCommand = new RelayCommand(arg =>
-                        //{
+                        ICommand showInfoCommand = new RelayCommand(arg =>
+                        {
+                            InfoViewModel vm = new InfoViewModel(faceInfo);
+                            _windowService.ShowDialogWindow<InfoWindow>(vm);
+                        });
+                        BindableMenuItem menuItemShowInfo = new BindableMenuItem();
+                        menuItemShowInfo.Name = "Show info";
+                        menuItemShowInfo.Command = showInfoCommand;
+                        menu.Add(menuItemShowInfo);
 
-                        //}, arg => _windowService != null);
-                        //BindableMenuItem menuItem3 = new BindableMenuItem();
-                        //menuItem3.Name = "Save as...";
-                        ////menu[1].Command = saveAsCommand;
-                        //menuItem3.Children =
-                        //либо окно с ыфбром классов все же показывать
-                        // menu.Add(menuItem2);
+                        ICommand saveAsCommand = new RelayCommand(arg =>
+                        {
+                            ClassSelecterViewModel vm = new ClassSelecterViewModel(_classes, _configuration);
+                            _windowService.ShowDialogWindow<ClassSelecterWindow>(vm);
+                        }, arg => _windowService != null);
+                        BindableMenuItem menuItemSaveAs = new BindableMenuItem();
+                        menuItemSaveAs.Name = "Save as...";
+                        menuItemSaveAs.Command = saveAsCommand;
+                        menu.Add(menuItemSaveAs);
 
                         return menu.ToArray();
                     }
                     return null;
                 });
 
+            }
+        }
+
+
+        private RelayCommand _checkDataBaseCommand;
+        public RelayCommand CheckDataBaseCommand
+        {
+            get
+            {
+                return _checkDataBaseCommand ?? (_checkDataBaseCommand = new RelayCommand((arg) =>
+                {
+                    //await 
+                    Task.Run(() =>
+                    {
+                        using (var db = TinyIoC.TinyIoCContainer.Current.Resolve<IDataBaseManager>(
+    new NamedParameterOverloads() { { "dataBaseName", "faces.litedb" } }))
+                        {
+                            CheckManager checkManager = new CheckManager(db, _configuration, _progress);
+                            MessageBox.Show("Checked!");
+                        }
+                    });
+                }, (arg) => true));
+            }
+        }
+
+
+        private RelayCommand _showAnotherClassAndDistanceMoreThan;
+        public RelayCommand ShowAnotherClassAndDistanceMoreThan
+        {
+            get
+            {
+                return _showAnotherClassAndDistanceMoreThan ?? (_showAnotherClassAndDistanceMoreThan = new RelayCommand(async (arg) =>
+                {
+                }, (arg) => true));
             }
         }
     }

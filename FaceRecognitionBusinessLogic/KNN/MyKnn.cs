@@ -45,6 +45,7 @@ namespace FaceRecognitionBusinessLogic.KNN
             //}
 
             VoteAndDistance result = Vote(info, trainData, classes, k);  // k nearest classes
+            result.TestData = unknown;
             return result;
         }
 
@@ -71,7 +72,7 @@ namespace FaceRecognitionBusinessLogic.KNN
                 string className = trainData[idx].Name; 
                 votes[className].Vote++;
                 votes[className].Distance =+ info[i].Distance;
-                votes[className].ClassInfo = trainData[idx];
+                votes[className].SortedInfos.Add(trainData[idx]);
             }
 
             //for (int p = 0; p < votes.Length; ++p)

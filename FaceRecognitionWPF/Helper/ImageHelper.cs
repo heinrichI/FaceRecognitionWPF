@@ -37,17 +37,17 @@ namespace FaceRecognitionWPF.Helper
         internal static extern bool DeleteObject(IntPtr value);
 
         internal static void SaveToClass(string className, string trainPath, string imagePath, 
-            FaceLocation faceLocation, int addBorder)
+           float _percentageOfBorder, int left, int top, int width, int height)
         {
             string fileName = Path.GetFileName(imagePath);
             string targetPath = Path.Combine(trainPath, className, fileName);
-            string targetPathSimilar = RenameHelper.GetSimilarName(targetPath, fileName);
-            if (File.Exists(targetPathSimilar))
-                throw new Exception($"File {targetPathSimilar} already exist!");
+            if (File.Exists(targetPath))
+                targetPath = RenameHelper.GetSimilarName(targetPath, fileName);
+            if (File.Exists(targetPath))
+                throw new Exception($"File {targetPath} already exist!");
 
-            var cropped = GetCroppedBitmap(addBorder, imagePath, 
-                faceLocation.Left, faceLocation.Top, faceLocation.Right - faceLocation.Left, 
-                faceLocation.Bottom - faceLocation.Top);
+            var cropped = GetCroppedBitmap(_percentageOfBorder, imagePath, 
+                left, top, width, height);
 
             ImageCodecInfo jpgEncoder = GetEncoder(ImageFormat.Jpeg);
 
@@ -64,7 +64,7 @@ namespace FaceRecognitionWPF.Helper
             EncoderParameter myEncoderParameter = new EncoderParameter(myEncoder, 95L);
             myEncoderParameters.Param[0] = myEncoderParameter;
 
-            cropped.Save(targetPathSimilar, jpgEncoder, myEncoderParameters);
+            cropped.Save(targetPath, jpgEncoder, myEncoderParameters);
         }
 
         private static ImageCodecInfo GetEncoder(ImageFormat format)
@@ -80,7 +80,7 @@ namespace FaceRecognitionWPF.Helper
             return null;
         }
 
-        internal static System.Drawing.Bitmap GetCroppedBitmap(int addBorder, string imageFile, 
+        internal static System.Drawing.Bitmap GetCroppedBitmap(float _percentageOfBorder, string imageFile, 
             int left, int top, int width, int height)
         {
             System.Drawing.Bitmap croppedImage;
@@ -92,6 +92,8 @@ namespace FaceRecognitionWPF.Helper
                     throw new ArgumentException("left > src.Width");
                 if (top > src.Height)
                     throw new ArgumentException("top > src.Height");
+                int addBorder = Convert.ToInt32(width * _percentageOfBorder);
+
                 int leftBorderAdded = left - addBorder >= 0 ? left - addBorder : left;
                 int topBorderAdded = top - addBorder >= 0 ? top - addBorder : top;
                 int widthBorderAdded = leftBorderAdded + width + addBorder * 2 > src.Width ?

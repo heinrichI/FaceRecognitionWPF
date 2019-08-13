@@ -11,6 +11,7 @@ namespace FaceRecognitionBusinessLogic.KNN
         public VoteAndDistance(string name)
         {
             Name = name;
+            SortedInfos = new List<ClassInfo>();
         }
 
         public string Name { get; }
@@ -19,6 +20,13 @@ namespace FaceRecognitionBusinessLogic.KNN
 
         public double Distance { get; internal set; }
 
-        public ClassInfo ClassInfo { get; internal set; }
+        public List<ClassInfo> SortedInfos { get; internal set; }
+
+        public double[] TestData { get; internal set; }
+
+        public override string ToString()
+        {
+            return $"{Name} - {Distance} - {Vote}";
+        }
     }
 }

@@ -9,13 +9,13 @@ namespace FaceRecognitionBusinessLogic.KNN
 {
     public class ClassInfo
     {
-        public ClassInfo(string className, double[] data, FaceLocation faceLocation)
+        public ClassInfo(string className, double[] data, string imagePath)
         {
             Name = className;
             Data = data;
             //Data = new List<double>();
             //Encodings = new List<FaceEncoding>();
-            FaceLocation = faceLocation;
+            ImagePath = imagePath;
         }
 
         public string Name { get; }
@@ -26,6 +26,6 @@ namespace FaceRecognitionBusinessLogic.KNN
 
         //public List<FaceEncoding> Encodings { get; }
 
-        public FaceLocation FaceLocation { get; }
+        public string ImagePath { get; }
     }
 }

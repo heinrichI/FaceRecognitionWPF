@@ -1,0 +1,55 @@
+﻿<Window x:Class="FaceRecognitionWPF.View.InfoWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:FaceRecognitionWPF.View"
+        mc:Ignorable="d"
+        Title="InfoWindow" Height="450" Width="800">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition />
+            <ColumnDefinition />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <Viewbox Grid.Row="0" 
+                 Grid.Column="0"
+                 Stretch="Fill">
+            <Image Source="{Binding TrainImage, Mode=OneWay}"/>
+        </Viewbox>
+
+        <Viewbox Grid.Row="0" 
+                 Grid.Column="1"
+                 Stretch="Fill">
+            <Image Source="{Binding TestImage, Mode=OneWay}"/>
+        </Viewbox>
+
+        <TextBox Grid.Row="1" 
+                 Grid.Column="0"
+                 Text="{Binding TrainPath}"
+                 IsReadOnly="True" />
+
+        <TextBox Grid.Row="1" 
+                 Grid.Column="1"
+            Text="{Binding TestPath}"
+                 IsReadOnly="True" />
+
+        <ListView Grid.Row="2" 
+                 Grid.Column="0"
+                  ItemsSource="{Binding TrainData}"></ListView>
+
+        <ListView Grid.Row="2" 
+                 Grid.Column="1"
+                   ItemsSource="{Binding TestData}">
+        </ListView>
+
+        <Button Grid.Row="3"
+                Grid.ColumnSpan="1">Recalculate data</Button>
+    </Grid>
+</Window>

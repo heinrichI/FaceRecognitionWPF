@@ -56,6 +56,17 @@ namespace FaceRecognitionDataBase
             }
         }
 
+        int _threadCount = Environment.ProcessorCount;
+        public int ThreadCount
+        {
+            get => this._threadCount;
+            set
+            {
+                this._threadCount = value;
+                this.OnPropertyChanged();
+            }
+        }
+
         public static Configuration Load()
         {
             Configuration model = SerializeHelper<Configuration>.Load(_fileName);

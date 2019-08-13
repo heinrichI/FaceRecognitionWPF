@@ -38,7 +38,7 @@ namespace FaceRecognitionBusinessLogic.DataBase
                 && Left == other.Left 
                 && Right == other.Right 
                 && Top == other.Top 
-                && Equals(FingerPrint, other.FingerPrint);
+                && FingerPrint.SequenceEqual(other.FingerPrint);
         }
 
         public override int GetHashCode()

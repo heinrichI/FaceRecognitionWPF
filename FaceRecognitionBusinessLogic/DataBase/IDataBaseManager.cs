@@ -13,5 +13,7 @@ namespace FaceRecognitionBusinessLogic.DataBase
         void AddFaceInfo(string imageFile, double[] doubleInfo, 
             int left, int right, int top, int bottom);
         void AddFileWithoutFace(string imageFile);
+
+        IEnumerable<FaceEncodingInfo> GetAll();
     }
 }

@@ -71,24 +71,19 @@ namespace FaceRecognitionDataBase
             if (faceEncodingInfo == null)
                 faceEncodingInfo = new FaceEncodingInfo(imageFile);
 
-            var fingerAndLocations  = _fingerCollection.Find(f => f.Left == left
-                && f.Right == right
-                && f.Top == top
-                && f.Bottom == bottom
-                && f.FingerPrint.Equals(doubleInfo));
+            FingerAndLocation fingerAndLocation = new FingerAndLocation();
+            fingerAndLocation.FingerPrint = doubleInfo;
+            fingerAndLocation.Left = left;
+            fingerAndLocation.Right = right;
+            fingerAndLocation.Top = top;
+            fingerAndLocation.Bottom = bottom;
 
-            FingerAndLocation fingerAndLocation;
+            var fingerAndLocations  = _fingerCollection.Find(f => f.Equals(fingerAndLocation));
+
             if (fingerAndLocations.Any())
-                fingerAndLocation = fingerAndLocations.Single();
+                fingerAndLocation.Id = fingerAndLocations.Single().Id;
             else
             {
-                fingerAndLocation = new FingerAndLocation();
-                fingerAndLocation.FingerPrint = doubleInfo;
-                fingerAndLocation.Left = left;
-                fingerAndLocation.Right = right;
-                fingerAndLocation.Top = top;
-                fingerAndLocation.Bottom = bottom;
-
                 _fingerCollection.Insert(fingerAndLocation);
             }
 
@@ -97,7 +92,7 @@ namespace FaceRecognitionDataBase
             && fe.Left == fingerAndLocation.Left
             && fe.Right == fingerAndLocation.Right
             && fe.Top == fingerAndLocation.Top
-            && fe.FingerPrint.Equals(fingerAndLocation.FingerPrint)))
+            && fe.FingerPrint.SequenceEqual(fingerAndLocation.FingerPrint)))
                 faceEncodingInfo.FingerAndLocations.Add(fingerAndLocation);
             try
             {
@@ -122,6 +117,11 @@ namespace FaceRecognitionDataBase
 
             faceEncodingInfo = new FaceEncodingInfo(imageFile);
             _faceCollection.Upsert(faceEncodingInfo);
+        }
+
+        public IEnumerable<FaceEncodingInfo> GetAll()
+        {
+            return _faceCollection.Include(x => x.FingerAndLocations).FindAll();
         }
     }
 }

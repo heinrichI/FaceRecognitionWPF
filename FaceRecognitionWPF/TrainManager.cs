@@ -18,7 +18,7 @@ using FaceRecognitionWPF.ViewModel;
 
 namespace FaceRecognitionWPF
 {
-    class TrainManager
+    class TrainManager : BaseManager
     {
         static object _searchStackLocker = new object();
         static object _dbLocker = new object();
@@ -34,9 +34,6 @@ namespace FaceRecognitionWPF
         Queue<string> _searchQueue;
         int _progressMaximum;
         int _current = 0;
-
-        IFormatterConverter _formatterConverter = new FormatterConverter();
-        StreamingContext _context = new StreamingContext();
 
         public TrainManager(ref List<ClassInfo> trainedInfo, 
             out IEnumerable<string> classes, 
@@ -63,24 +60,10 @@ namespace FaceRecognitionWPF
             _progressMaximum = searchFiles.Count();
             _searchQueue = new Queue<string>(searchFiles);
 
-
-            Thread[] threads = new Thread[threadCount];
-
-            for (int i = 0; i < threadCount; i++)
-            {
-                threads[i] = new Thread(ThreadWork);
-                threads[i].IsBackground = true;
-                threads[i].Priority = ThreadPriority.Lowest;
-                threads[i].Start();
-            }
-
-            for (int i = 0; i < threadCount; i++)
-            {
-                threads[i].Join();
-            }
+            base.StartThreads(threadCount);
         }
 
-        public void ThreadWork()
+        public override void ThreadWork()
         {
             string imagePath;
 
@@ -169,13 +152,9 @@ namespace FaceRecognitionWPF
                                     encoding.Dispose();
                                     var dir = Path.GetDirectoryName(imagePath);
                                     string directory = new DirectoryInfo(dir).Name;
-                                    FaceLocation faceLocation = new FaceLocation(faceBoundingBoxes.Single().Left,
-                                        faceBoundingBoxes.Single().Right,
-                                        faceBoundingBoxes.Single().Top,
-                                        faceBoundingBoxes.Single().Bottom);
                                     lock (_trainedInfoLocker)
                                     {
-                                        _trainedInfo.Add(new ClassInfo(directory, doubleInfo, faceLocation));
+                                        _trainedInfo.Add(new ClassInfo(directory, doubleInfo, imagePath));
                                     }
 
                                     lock (_dbLocker)
@@ -195,10 +174,8 @@ namespace FaceRecognitionWPF
                         lock (_trainedInfoLocker)
                         {
                             var fingerAndLocation = founded.FingerAndLocations.Single();
-                            FaceLocation faceLocation = new FaceLocation(fingerAndLocation.Left,
-                                fingerAndLocation.Right, fingerAndLocation.Top, fingerAndLocation.Bottom);
-                        _trainedInfo.Add(new ClassInfo(directory,
-                                fingerAndLocation.FingerPrint, faceLocation));
+                            _trainedInfo.Add(new ClassInfo(directory,
+                                fingerAndLocation.FingerPrint, imagePath));
                         }
                     }
                 }
