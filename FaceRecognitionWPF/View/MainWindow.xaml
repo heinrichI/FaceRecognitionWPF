@@ -39,20 +39,22 @@
                 <StackPanel >
                 <Label>Models directory</Label>
                 <TextBox Text="{Binding Configuration.ModelsDirectory, UpdateSourceTrigger=PropertyChanged}"></TextBox>
-                <Label>Train path</Label>
-                <TextBox Text="{Binding Configuration.TrainPath, UpdateSourceTrigger=PropertyChanged}"></TextBox>
-                <Label>Search path</Label>
-                <TextBox Text="{Binding Configuration.SearchPath, UpdateSourceTrigger=PropertyChanged}"></TextBox>
-                <Label>Distance threshold</Label>
-                <TextBox Text="{Binding Configuration.DistanceThreshold, UpdateSourceTrigger=PropertyChanged}"></TextBox>
                 <Label>Thread count</Label>
                 <TextBox Text="{Binding Configuration.ThreadCount, UpdateSourceTrigger=PropertyChanged}"></TextBox>
-                <Button Command="{Binding RunCommand}">Run</Button>
+                <Label>Train path</Label>
+                <TextBox Text="{Binding Configuration.TrainPath, UpdateSourceTrigger=PropertyChanged}"></TextBox>
+                <Button Command="{Binding TrainCommand}">Train</Button>
+                <Label>Distance threshold</Label>
+                <TextBox Text="{Binding Configuration.DistanceThreshold, UpdateSourceTrigger=PropertyChanged}"></TextBox>
+                <Label>Search or check path</Label>
+                <TextBox Text="{Binding Configuration.SearchPath, UpdateSourceTrigger=PropertyChanged}"></TextBox>
+                <Button Command="{Binding RunCommand}">Run search</Button>
                 <GroupBox Header="Check">
                     <StackPanel>
-                        <Button >Show another class and distance more than</Button>
+                        <Button Command="{Binding ShowAnotherClassAndDistanceMoreThanCommand}">Show another class and distance more than</Button>
                         <Label>Class</Label>
-                        <ComboBox></ComboBox>
+                        <ComboBox ItemsSource="{Binding Classes}"
+                            SelectedValue="{Binding CheckClass}"></ComboBox>
                     </StackPanel>
                 </GroupBox>
 

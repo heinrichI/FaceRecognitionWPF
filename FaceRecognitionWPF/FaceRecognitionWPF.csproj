@@ -84,7 +84,9 @@
     <Compile Include="RelayCommand.cs" />
     <Compile Include="SearchManager.cs" />
     <Compile Include="TrainManager.cs" />
+    <Compile Include="ViewModel\BoolEventHandler.cs" />
     <Compile Include="ViewModel\ClassSelecterViewModel.cs" />
+    <Compile Include="ViewModel\CloseableViewModel.cs" />
     <Compile Include="ViewModel\FaceViewModel.cs" />
     <Compile Include="ViewModel\IClosingViewModel.cs" />
     <Compile Include="ViewModel\InfoViewModel.cs" />

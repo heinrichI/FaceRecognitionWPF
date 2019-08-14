@@ -17,6 +17,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
@@ -54,8 +55,6 @@ namespace FaceRecognitionWPF.ViewModel
         }
 
         const float _percentageOfBorder = 0.3F;
-
-        IEnumerable<string> _classes;
 
         private IProgress<ProgressPartialResult> _progress;
 
@@ -146,6 +145,29 @@ namespace FaceRecognitionWPF.ViewModel
             }
         }
 
+        List<ClassInfo> _trainedInfo = new List<ClassInfo>();
+
+        IEnumerable<string> _classes;
+        public IEnumerable<string> Classes
+        {
+            get => this._classes;
+            set
+            {
+                this._classes = value;
+                this.OnPropertyChanged();
+            }
+        }
+
+        string _checkClass;
+        public string CheckClass
+        {
+            get => this._checkClass;
+            set
+            {
+                this._checkClass = value;
+                this.OnPropertyChanged();
+            }
+        }
 
         private RelayCommand _runCommand;
         public RelayCommand RunCommand
@@ -168,15 +190,16 @@ namespace FaceRecognitionWPF.ViewModel
                             using (var db = TinyIoC.TinyIoCContainer.Current.Resolve<IDataBaseManager>(
                                 new NamedParameterOverloads() { { "dataBaseName", "faces.litedb" } }))
                             {
-                                List<ClassInfo> trainedInfo = new List<ClassInfo>();
-
-                                TrainManager trainManager = new TrainManager(ref trainedInfo, out _classes,
-                                    _configuration.ThreadCount, _configuration, db, _progress, _windowService);
-
+                                if (_trainedInfo == null || !_trainedInfo.Any())
+                                {
+                                    TrainManager trainManager = new TrainManager(ref _trainedInfo,
+                                        _configuration, db, _progress, _windowService);
+                                    Classes = trainManager.Train(_configuration.ThreadCount);
+                                }
 
                                 SearchManager sm = new SearchManager(_configuration.ThreadCount, _configuration, _progress,
-                                    db, trainedInfo, _classes,
-                                    DirectoriesWithFaces, AddToViewImage);
+                                    db, _trainedInfo, _classes,
+                                    DirectoriesWithFaces, AddToViewImage, CheckClass);
                             }
 
 
@@ -298,25 +321,49 @@ namespace FaceRecognitionWPF.ViewModel
                             menu.Add(menuItem2);
                         }
 
-                        ICommand showInfoCommand = new RelayCommand(arg =>
-                        {
-                            InfoViewModel vm = new InfoViewModel(faceInfo);
-                            _windowService.ShowDialogWindow<InfoWindow>(vm);
-                        });
-                        BindableMenuItem menuItemShowInfo = new BindableMenuItem();
-                        menuItemShowInfo.Name = "Show info";
-                        menuItemShowInfo.Command = showInfoCommand;
-                        menu.Add(menuItemShowInfo);
-
                         ICommand saveAsCommand = new RelayCommand(arg =>
                         {
-                            ClassSelecterViewModel vm = new ClassSelecterViewModel(_classes, _configuration);
-                            _windowService.ShowDialogWindow<ClassSelecterWindow>(vm);
+                            ClassSelecterViewModel vm = new ClassSelecterViewModel(_classes);
+                            var result = _windowService.ShowDialogWindow<ClassSelecterWindow>(vm);
+                            if (result.HasValue && result.Value)
+                            {
+                                ImageHelper.SaveToClass(vm.SelectedClass,
+                                   _configuration.TrainPath,
+                                   faceInfo.Path, _percentageOfBorder, faceInfo.Left, faceInfo.Top, faceInfo.Width, faceInfo.Height);
+                                _lastSavedClass = vm.SelectedClass;
+                            }
                         }, arg => _windowService != null);
                         BindableMenuItem menuItemSaveAs = new BindableMenuItem();
                         menuItemSaveAs.Name = "Save as...";
                         menuItemSaveAs.Command = saveAsCommand;
                         menu.Add(menuItemSaveAs);
+
+                        ICommand copeToCommand = new RelayCommand(arg =>
+                        {
+                            ClassSelecterViewModel vm = new ClassSelecterViewModel(_classes);
+                            var result = _windowService.ShowDialogWindow<ClassSelecterWindow>(vm);
+                            if (result.HasValue && result.Value)
+                            {
+                                string targetPath = ImageHelper.GetTargetPath(vm.SelectedClass,
+                                   _configuration.TrainPath, faceInfo.Path);
+                                File.Copy(faceInfo.Path, targetPath);
+                                _lastSavedClass = vm.SelectedClass;
+                            }
+                        }, arg => _windowService != null);
+                        BindableMenuItem menuItemCopyTo = new BindableMenuItem();
+                        menuItemCopyTo.Name = "Copy to...";
+                        menuItemCopyTo.Command = copeToCommand;
+                        menu.Add(menuItemCopyTo);
+
+                        ICommand showInfoCommand = new RelayCommand(arg =>
+                        {
+                            InfoViewModel vm = new InfoViewModel(faceInfo);
+                            var result = _windowService.ShowDialogWindow<InfoWindow>(vm);
+                        });
+                        BindableMenuItem menuItemShowInfo = new BindableMenuItem();
+                        menuItemShowInfo.Name = "Show info";
+                        menuItemShowInfo.Command = showInfoCommand;
+                        menu.Add(menuItemShowInfo);
 
                         return menu.ToArray();
                     }
@@ -334,7 +381,6 @@ namespace FaceRecognitionWPF.ViewModel
             {
                 return _checkDataBaseCommand ?? (_checkDataBaseCommand = new RelayCommand((arg) =>
                 {
-                    //await 
                     Task.Run(() =>
                     {
                         using (var db = TinyIoC.TinyIoCContainer.Current.Resolve<IDataBaseManager>(
@@ -349,14 +395,75 @@ namespace FaceRecognitionWPF.ViewModel
         }
 
 
-        private RelayCommand _showAnotherClassAndDistanceMoreThan;
-        public RelayCommand ShowAnotherClassAndDistanceMoreThan
+        private RelayCommand _showAnotherClassAndDistanceMoreThanCommand;
+        public RelayCommand ShowAnotherClassAndDistanceMoreThanCommand
         {
             get
             {
-                return _showAnotherClassAndDistanceMoreThan ?? (_showAnotherClassAndDistanceMoreThan = new RelayCommand(async (arg) =>
+                return _showAnotherClassAndDistanceMoreThanCommand ?? (_showAnotherClassAndDistanceMoreThanCommand = new RelayCommand((arg) =>
                 {
-                }, (arg) => true));
+                    Task.Run(() =>
+                    {
+                        using (var db = TinyIoC.TinyIoCContainer.Current.Resolve<IDataBaseManager>(
+                            new NamedParameterOverloads() { { "dataBaseName", "faces.litedb" } }))
+                        {
+                            if (_trainedInfo == null || !_trainedInfo.Any())
+                            {
+                                TrainManager trainManager = new TrainManager(ref _trainedInfo,
+                                    _configuration, db, _progress, _windowService);
+                                Classes = trainManager.Train(_configuration.ThreadCount);
+                            }
+
+                            SearchManager sm = new SearchManager(_configuration.ThreadCount, _configuration, _progress,
+                                db, _trainedInfo, _classes,
+                                DirectoriesWithFaces, AddToViewImage, CheckClass);
+                        }
+                        MessageBox.Show("Done!");
+                    });
+                }, (arg) => !String.IsNullOrEmpty(CheckClass)));
+            }
+        }
+
+        private RelayCommand _trainCommand;
+        public RelayCommand TrainCommand
+        {
+            get
+            {
+                return _trainCommand ?? (_trainCommand = new RelayCommand((arg) =>
+                {
+                    TaskScheduler syncContextScheduler;
+                    if (SynchronizationContext.Current != null)
+                    {
+                        syncContextScheduler = TaskScheduler.FromCurrentSynchronizationContext();
+                    }
+                    else
+                    {
+                        // If there is no SyncContext for this thread (e.g. we are in a unit test
+                        // or console scenario instead of running in an app), then just use the
+                        // default scheduler because there is no UI thread to sync with.
+                        syncContextScheduler = TaskScheduler.Current;
+                    }
+
+                    Task.Run(() =>
+                    {
+                        using (var db = TinyIoC.TinyIoCContainer.Current.Resolve<IDataBaseManager>(
+                            new NamedParameterOverloads() { { "dataBaseName", "faces.litedb" } }))
+                        {
+                            if (_trainedInfo == null || !_trainedInfo.Any())
+                            {
+                                TrainManager trainManager = new TrainManager(ref _trainedInfo,
+                                    _configuration, db, _progress, _windowService);
+                                Classes = trainManager.Train(_configuration.ThreadCount);
+                            }
+                        }
+                    })
+                    .ContinueWith(t =>
+                    {
+                        _trainCommand.RaiseCanExecuteChanged();
+                    }, syncContextScheduler);
+
+
+                }, (arg) => _trainedInfo == null || !_trainedInfo.Any()));
             }
         }
     }

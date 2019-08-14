@@ -8,8 +8,17 @@
         Title="{Binding Title}"
        Height="450" Width="800">
     <Grid>
-        <Viewbox Stretch="Uniform">
+        <Grid.RowDefinitions>
+            <RowDefinition/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        
+        <Viewbox Grid.Row="0"
+            Stretch="Uniform">
             <Image Source="{Binding Image, Mode=OneWay}"/>
         </Viewbox>
+
+        <Button Grid.Row="1"
+                Command="{Binding DeleteFileCommand}">Delete file</Button>
     </Grid>
 </Window>

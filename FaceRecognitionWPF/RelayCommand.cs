@@ -50,6 +50,11 @@ namespace FaceRecognitionWPF
             remove { CommandManager.RequerySuggested -= value; }
         }
 
+        public void RaiseCanExecuteChanged()
+        {
+            CommandManager.InvalidateRequerySuggested();
+        }
+
         public void Execute(object parameter)
         {
             _execute(parameter);

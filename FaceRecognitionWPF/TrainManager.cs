@@ -18,14 +18,19 @@ using FaceRecognitionWPF.ViewModel;
 
 namespace FaceRecognitionWPF
 {
-    class TrainManager : BaseManager
+    class TrainManager 
     {
         static object _searchStackLocker = new object();
         static object _dbLocker = new object();
         static object _progressLocker = new object();
         static object _trainedInfoLocker = new object();
 
+        protected IFormatterConverter _formatterConverter = new FormatterConverter();
+        protected StreamingContext _context = new StreamingContext();
+
         private List<ClassInfo> _trainedInfo;
+        IEnumerable<string> _classes;
+
         private IConfiguration _configuration;
         private IDataBaseManager _db;
         private IProgress<ProgressPartialResult> _progress;
@@ -36,34 +41,48 @@ namespace FaceRecognitionWPF
         int _current = 0;
 
         public TrainManager(ref List<ClassInfo> trainedInfo, 
-            out IEnumerable<string> classes, 
-            int threadCount, 
             IConfiguration configuration, 
             IDataBaseManager db, 
             IProgress<ProgressPartialResult> progress,
             View.WindowService windowService)
         {
             this._trainedInfo = trainedInfo;
-            classes = null;
             _configuration = configuration;
             this._db = db;
             _progress = progress;
             _windowService = windowService;
+        }
 
+        public IEnumerable<string> Train(int threadCount)
+        {
             _progress.Report(new ProgressPartialResult() { Current = 0, Total = 0, Text = "Read images in directory" });
 
             var directories = System.IO.Directory.GetDirectories(_configuration.TrainPath);
-            classes = directories.Select(d => new DirectoryInfo(d).Name);
+            _classes = directories.Select(d => new DirectoryInfo(d).Name);
 
-            var searchFiles = System.IO.Directory.GetFiles(_configuration.TrainPath, "*", 
-                SearchOption.AllDirectories);
+            var searchFiles = System.IO.Directory.GetFiles(_configuration.TrainPath, "*", SearchOption.AllDirectories);
             _progressMaximum = searchFiles.Count();
             _searchQueue = new Queue<string>(searchFiles);
 
-            base.StartThreads(threadCount);
+            Thread[] threads = new Thread[threadCount];
+
+            for (int i = 0; i < threadCount; i++)
+            {
+                threads[i] = new Thread(ThreadWork);
+                threads[i].IsBackground = true;
+                threads[i].Priority = ThreadPriority.Lowest;
+                threads[i].Start();
+            }
+
+            for (int i = 0; i < threadCount; i++)
+            {
+                threads[i].Join();
+            }
+
+            return _classes;
         }
 
-        public override void ThreadWork()
+        private void ThreadWork()
         {
             string imagePath;
 

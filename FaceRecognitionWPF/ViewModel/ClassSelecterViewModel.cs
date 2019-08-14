@@ -8,19 +8,45 @@ using System.Threading.Tasks;
 
 namespace FaceRecognitionWPF.ViewModel
 {
-    public class ClassSelecterViewModel : BasePropertyChanged, IClosingViewModel
+    public class ClassSelecterViewModel : CloseableViewModel
     {
-        private IEnumerable<string> _classes;
-        private IConfiguration _configuration;
-
-        public ClassSelecterViewModel(IEnumerable<string> classes, IConfiguration configuration)
+        public ClassSelecterViewModel(IEnumerable<string> classes)
         {
-            _classes = classes;
-            _configuration = configuration;
+            Сlasses = classes;
         }
 
-        public void OnClosing(object sender, CancelEventArgs e)
+        IEnumerable<string> _сlasses;
+        public IEnumerable<string> Сlasses
         {
+            get => this._сlasses;
+            set
+            {
+                this._сlasses = value;
+                this.OnPropertyChanged();
+            }
+        }
+
+        string _selectedClass;
+        public string SelectedClass
+        {
+            get => _selectedClass;
+            set
+            {
+                this._selectedClass = value;
+                this.OnPropertyChanged();
+            }
+        }
+
+        private RelayCommand _selectCommand;
+        public RelayCommand SelectCommand
+        {
+            get
+            {
+                return _selectCommand ?? (_selectCommand = new RelayCommand((arg) =>
+                {
+                    base.RaiseClosingRequest(true);
+                }, (arg) => !String.IsNullOrEmpty(SelectedClass)));
+            }
         }
     }
 }

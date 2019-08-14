@@ -36,15 +36,25 @@ namespace FaceRecognitionWPF.Helper
         [return: MarshalAs(UnmanagedType.Bool)]
         internal static extern bool DeleteObject(IntPtr value);
 
-        internal static void SaveToClass(string className, string trainPath, string imagePath, 
-           float _percentageOfBorder, int left, int top, int width, int height)
+        internal static string GetTargetPath(string className, string trainPath, string imagePath)
         {
             string fileName = Path.GetFileName(imagePath);
-            string targetPath = Path.Combine(trainPath, className, fileName);
+            string classDirectory = Path.Combine(trainPath, className);
+            if (!Directory.Exists(classDirectory))
+                Directory.CreateDirectory(classDirectory);
+            string targetPath = Path.Combine(classDirectory, fileName);
             if (File.Exists(targetPath))
                 targetPath = RenameHelper.GetSimilarName(targetPath, fileName);
             if (File.Exists(targetPath))
                 throw new Exception($"File {targetPath} already exist!");
+
+            return targetPath;
+        }
+
+        internal static void SaveToClass(string className, string trainPath, string imagePath, 
+           float _percentageOfBorder, int left, int top, int width, int height)
+        {
+            string targetPath = GetTargetPath(className, trainPath, imagePath);
 
             var cropped = GetCroppedBitmap(_percentageOfBorder, imagePath, 
                 left, top, width, height);
@@ -93,6 +103,7 @@ namespace FaceRecognitionWPF.Helper
                 if (top > src.Height)
                     throw new ArgumentException("top > src.Height");
                 int addBorder = Convert.ToInt32(width * _percentageOfBorder);
+                //int addBorder = 30;
 
                 int leftBorderAdded = left - addBorder >= 0 ? left - addBorder : left;
                 int topBorderAdded = top - addBorder >= 0 ? top - addBorder : top;

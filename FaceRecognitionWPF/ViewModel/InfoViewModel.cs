@@ -9,10 +9,8 @@ using System.Threading.Tasks;
 
 namespace FaceRecognitionWPF.ViewModel
 {
-    public class InfoViewModel : BasePropertyChanged, IClosingViewModel
+    public class InfoViewModel : CloseableViewModel
     {
-
-
         public InfoViewModel(FaceInfo faceInfo)
         {
             TrainData = faceInfo.SortedInfos.First().Data;

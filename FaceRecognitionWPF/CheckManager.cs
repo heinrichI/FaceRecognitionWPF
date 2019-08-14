@@ -35,7 +35,7 @@ namespace FaceRecognitionWPF
             base.StartThreads(configuration.ThreadCount);
         }
 
-        public override void ThreadWork()
+        protected override void ThreadWork()
         {
             FaceEncodingInfo faceEncodingInfo;
 

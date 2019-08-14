@@ -25,7 +25,7 @@ namespace FaceRecognitionWPF.View
         //    }
         //}
 
-        public void ShowDialogWindow<T>(IClosingViewModel dataContext) where T : Window, new()
+        public bool? ShowDialogWindow<T>(IClosingViewModel dataContext) where T : Window, new()
         {
             bool? result = null;
 
@@ -38,9 +38,15 @@ namespace FaceRecognitionWPF.View
             view.DataContext = dataContext;
             view.WindowStartupLocation = WindowStartupLocation.CenterOwner;
             view.Closing += new System.ComponentModel.CancelEventHandler(dataContext.OnClosing);
+            dataContext.ClosingRequest += (sender, e) =>
+            {
+                view.DialogResult = e.DialogResult;
+                view.Close();
+            };
             ApplyEffect(view.Owner);
             result = view.ShowDialog();
             ClearEffect(view.Owner);
+            return result;
         }
 
         /// <summary>

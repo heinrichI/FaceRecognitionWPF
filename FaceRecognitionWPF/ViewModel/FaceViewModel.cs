@@ -13,17 +13,19 @@ using FaceRecognitionDotNet;
 
 namespace FaceRecognitionWPF.ViewModel
 {
-    class FaceViewModel : BasePropertyChanged, IClosingViewModel
+    class FaceViewModel : CloseableViewModel
     {
-
-        public FaceViewModel(IEnumerable<Location> faceBoundingBoxes, string imageFile)
+        string _imagePath;
+        public FaceViewModel(IEnumerable<Location> faceBoundingBoxes, string imagePath)
         {
-            Title = imageFile;
+            _imagePath = imagePath;
+
+            Title = imagePath;
             Application.Current.Dispatcher.Invoke(() =>
             {
                 BitmapImage src = new BitmapImage();
                 src.BeginInit();
-                src.UriSource = new Uri(imageFile, UriKind.Absolute);
+                src.UriSource = new Uri(imagePath, UriKind.Absolute);
                 src.CacheOption = BitmapCacheOption.OnLoad;
                 src.EndInit();
 
@@ -50,6 +52,8 @@ namespace FaceRecognitionWPF.ViewModel
 
         public FaceViewModel(FaceLocation faceLocation, string imagePath)
         {
+            _imagePath = imagePath;
+
             Title = imagePath;
             Application.Current.Dispatcher.Invoke(() =>
             {
@@ -77,14 +81,16 @@ namespace FaceRecognitionWPF.ViewModel
             });
         }
 
-        public FaceViewModel(string imageFile)
+        public FaceViewModel(string imagePath)
         {
-            Title = $"Not found face in {imageFile}";
+            _imagePath = imagePath;
+
+            Title = $"Not found face in {imagePath}";
             Application.Current.Dispatcher.Invoke(() =>
             {
                 BitmapImage src = new BitmapImage();
                 src.BeginInit();
-                src.UriSource = new Uri(imageFile, UriKind.Absolute);
+                src.UriSource = new Uri(imagePath, UriKind.Absolute);
                 src.CacheOption = BitmapCacheOption.OnLoad;
                 src.EndInit();
 
@@ -116,6 +122,22 @@ namespace FaceRecognitionWPF.ViewModel
             {
                 this._title = value;
                 this.OnPropertyChanged();
+            }
+        }
+
+        private RelayCommand _deleteFileCommand;
+        public RelayCommand DeleteFileCommand
+        {
+            get
+            {
+                return _deleteFileCommand ?? (_deleteFileCommand = new RelayCommand((arg) =>
+                {
+                    if (MessageBox.Show($"Are you shure want to delete {_imagePath}?", "Question", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
+                    {
+                        System.IO.File.Delete(_imagePath);
+                    }
+                    base.RaiseClosingRequest(true);
+                }, (arg) => !String.IsNullOrEmpty(_imagePath)));
             }
         }
     }

@@ -31,6 +31,6 @@ namespace FaceRecognitionWPF
             }
         }
 
-        public abstract void ThreadWork();
+        protected abstract void ThreadWork();
     }
 }

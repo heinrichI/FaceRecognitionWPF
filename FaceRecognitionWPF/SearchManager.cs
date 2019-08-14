@@ -36,6 +36,7 @@ namespace FaceRecognitionWPF
         ObservableCollection<DirectoryWithFaces> _directoryWithFaces;
         Action<string, ObservableCollection<DirectoryWithFaces>,
             VoteAndDistance, int, int, int, int> _addToViewImageAction;
+        string _checkClass;
 
         public SearchManager(int threadCount,
             IConfiguration configuration,
@@ -45,7 +46,8 @@ namespace FaceRecognitionWPF
             IEnumerable<string> classes,
             ObservableCollection<DirectoryWithFaces> directoryWithFaces,
             Action<string, ObservableCollection<DirectoryWithFaces>, 
-                VoteAndDistance, int, int, int, int> addToViewImageAction)
+                VoteAndDistance, int, int, int, int> addToViewImageAction,
+            string checkClass = null)
         {
             _progress = progress;
             _db = db;
@@ -54,6 +56,7 @@ namespace FaceRecognitionWPF
             _classes = classes;
             _directoryWithFaces = directoryWithFaces;
             _addToViewImageAction = addToViewImageAction;
+            _checkClass = checkClass;
 
             _progress.Report(new ProgressPartialResult() { Current = 0, Total = 0, Text = "Read images in directory" });
 
@@ -68,7 +71,7 @@ namespace FaceRecognitionWPF
             base.StartThreads(threadCount);
         }
 
-        public override void ThreadWork()
+        protected override void ThreadWork()
         {
             string imagePath;
 
@@ -111,7 +114,6 @@ namespace FaceRecognitionWPF
                             continue;
                         }
                         using (unknownImage)
-                        //using (var unknownImage = FaceRecognition.LoadImage(ms))
                         {
                             Debug.WriteLine($"Read {imagePath}");
                             //find face locations
@@ -134,7 +136,6 @@ namespace FaceRecognitionWPF
                                     continue;
 
                                 var encoding = encodings.Single();
-                                //foreach (var encoding in encodings)
 
                                 var info = new SerializationInfo(typeof(double), _formatterConverter);
                                 encoding.GetObjectData(info, _context);
@@ -144,16 +145,28 @@ namespace FaceRecognitionWPF
                                 lock (_dbLocker)
                                 {
                                     _db.AddFaceInfo(imagePath, unknown, location.Left, location.Right,
-                                    location.Top, location.Bottom);
+                                        location.Top, location.Bottom);
                                 }
 
                                 VoteAndDistance predict = MyKnn.Classify(unknown, _trainedInfo, _classes.ToArray(), 1);
 
-                                if (predict.Distance < _configuration.DistanceThreshold)
+                                if (String.IsNullOrEmpty(_checkClass))
                                 {
-                                    Debug.WriteLine($"Found {predict.Name} in {imagePath} with {predict.Distance} distance");
-                                    _addToViewImageAction(imagePath, _directoryWithFaces, predict, location.Left, location.Top,
-                                                    location.Right - location.Left, location.Bottom - location.Top);
+                                    if (predict.Distance < _configuration.DistanceThreshold)
+                                    {
+                                        Debug.WriteLine($"Found {predict.Name} in {imagePath} with {predict.Distance} distance");
+                                        _addToViewImageAction(imagePath, _directoryWithFaces, predict, location.Left, location.Top,
+                                                        location.Right - location.Left, location.Bottom - location.Top);
+                                    }
+                                }
+                                else
+                                {
+                                    if (predict.Distance > _configuration.DistanceThreshold
+                                        || predict.Name != _checkClass)
+                                    {
+                                        _addToViewImageAction(imagePath, _directoryWithFaces, predict, location.Left, location.Top,
+                                                        location.Right - location.Left, location.Bottom - location.Top);
+                                    }
                                 }
 
                             }
@@ -166,12 +179,26 @@ namespace FaceRecognitionWPF
                             VoteAndDistance predict = MyKnn.Classify(fingerAndLocations.FingerPrint,
                                 _trainedInfo, _classes.ToArray(), 1);
 
-                            if (predict.Distance < _configuration.DistanceThreshold)
+                            if (String.IsNullOrEmpty(_checkClass))
                             {
-                                _addToViewImageAction(imagePath, _directoryWithFaces, predict,
-                                    fingerAndLocations.Left, fingerAndLocations.Top,
-                                    fingerAndLocations.Right - fingerAndLocations.Left,
-                                    fingerAndLocations.Bottom - fingerAndLocations.Top);
+                                if (predict.Distance < _configuration.DistanceThreshold)
+                                {
+                                    _addToViewImageAction(imagePath, _directoryWithFaces, predict,
+                                        fingerAndLocations.Left, fingerAndLocations.Top,
+                                        fingerAndLocations.Right - fingerAndLocations.Left,
+                                        fingerAndLocations.Bottom - fingerAndLocations.Top);
+                                }
+                            }
+                            else
+                            {
+                                if (predict.Distance > _configuration.DistanceThreshold
+                                    || predict.Name != _checkClass)
+                                {
+                                    _addToViewImageAction(imagePath, _directoryWithFaces, predict, 
+                                        fingerAndLocations.Left, fingerAndLocations.Top,
+                                        fingerAndLocations.Right - fingerAndLocations.Left,
+                                        fingerAndLocations.Bottom - fingerAndLocations.Top);
+                                }
                             }
                         }
                     }

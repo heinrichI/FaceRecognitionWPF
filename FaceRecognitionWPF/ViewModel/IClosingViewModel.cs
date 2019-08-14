@@ -8,6 +8,8 @@ namespace FaceRecognitionWPF.ViewModel
 {
     public interface IClosingViewModel
     {
+        event EventHandler<BoolEventHandler> ClosingRequest;
+
         void OnClosing(object sender, System.ComponentModel.CancelEventArgs e);
     }
 }
