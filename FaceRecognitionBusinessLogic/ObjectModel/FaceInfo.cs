@@ -68,6 +68,9 @@ namespace FaceRecognitionBusinessLogic.ObjectModel
         public int Height { get; set; }
 
         public List<ClassInfo> SortedInfos { get; set; }
+
         public double[] TestData { get; set; }
+
+        public int LocationsCount { get; set; }
     }
 }

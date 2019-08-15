@@ -79,6 +79,8 @@ namespace FaceRecognitionWPF
                 threads[i].Join();
             }
 
+            _progress.Report(new ProgressPartialResult() { Current = _progressMaximum, Total = _progressMaximum, Text = String.Empty });
+
             return _classes;
         }
 

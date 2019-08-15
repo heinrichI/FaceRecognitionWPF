@@ -20,13 +20,13 @@
 
         <Viewbox Grid.Row="0" 
                  Grid.Column="0"
-                 Stretch="Fill">
+                 Stretch="Uniform">
             <Image Source="{Binding TrainImage, Mode=OneWay}"/>
         </Viewbox>
 
         <Viewbox Grid.Row="0" 
                  Grid.Column="1"
-                 Stretch="Fill">
+                 Stretch="Uniform">
             <Image Source="{Binding TestImage, Mode=OneWay}"/>
         </Viewbox>
 

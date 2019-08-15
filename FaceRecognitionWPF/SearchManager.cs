@@ -35,7 +35,7 @@ namespace FaceRecognitionWPF
         IEnumerable<string> _classes;
         ObservableCollection<DirectoryWithFaces> _directoryWithFaces;
         Action<string, ObservableCollection<DirectoryWithFaces>,
-            VoteAndDistance, int, int, int, int> _addToViewImageAction;
+            VoteAndDistance, int, int, int, int, int> _addToViewImageAction;
         string _checkClass;
 
         public SearchManager(int threadCount,
@@ -46,7 +46,7 @@ namespace FaceRecognitionWPF
             IEnumerable<string> classes,
             ObservableCollection<DirectoryWithFaces> directoryWithFaces,
             Action<string, ObservableCollection<DirectoryWithFaces>, 
-                VoteAndDistance, int, int, int, int> addToViewImageAction,
+                VoteAndDistance, int, int, int, int, int> addToViewImageAction,
             string checkClass = null)
         {
             _progress = progress;
@@ -156,7 +156,8 @@ namespace FaceRecognitionWPF
                                     {
                                         Debug.WriteLine($"Found {predict.Name} in {imagePath} with {predict.Distance} distance");
                                         _addToViewImageAction(imagePath, _directoryWithFaces, predict, location.Left, location.Top,
-                                                        location.Right - location.Left, location.Bottom - location.Top);
+                                                        location.Right - location.Left, location.Bottom - location.Top,
+                                                        locations.Count());
                                     }
                                 }
                                 else
@@ -165,7 +166,8 @@ namespace FaceRecognitionWPF
                                         || predict.Name != _checkClass)
                                     {
                                         _addToViewImageAction(imagePath, _directoryWithFaces, predict, location.Left, location.Top,
-                                                        location.Right - location.Left, location.Bottom - location.Top);
+                                                        location.Right - location.Left, location.Bottom - location.Top,
+                                                        locations.Count());
                                     }
                                 }
 
@@ -186,7 +188,8 @@ namespace FaceRecognitionWPF
                                     _addToViewImageAction(imagePath, _directoryWithFaces, predict,
                                         fingerAndLocations.Left, fingerAndLocations.Top,
                                         fingerAndLocations.Right - fingerAndLocations.Left,
-                                        fingerAndLocations.Bottom - fingerAndLocations.Top);
+                                        fingerAndLocations.Bottom - fingerAndLocations.Top,
+                                        founded.FingerAndLocations.Count);
                                 }
                             }
                             else
@@ -197,7 +200,8 @@ namespace FaceRecognitionWPF
                                     _addToViewImageAction(imagePath, _directoryWithFaces, predict, 
                                         fingerAndLocations.Left, fingerAndLocations.Top,
                                         fingerAndLocations.Right - fingerAndLocations.Left,
-                                        fingerAndLocations.Bottom - fingerAndLocations.Top);
+                                        fingerAndLocations.Bottom - fingerAndLocations.Top,
+                                        founded.FingerAndLocations.Count);
                                 }
                             }
                         }

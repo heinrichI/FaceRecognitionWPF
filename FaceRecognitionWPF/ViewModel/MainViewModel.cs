@@ -38,10 +38,16 @@ namespace FaceRecognitionWPF.ViewModel
 
             _progress = new Progress<ProgressPartialResult>((result) =>
             {
-                ProgressMaximum = result.Total;
-                ProgressValue = result.Current;
-                //ProgressValueTaskbar = (double)result.Current / (double)result.Total;
-                ProgressText = String.Format("{0} / {1}  {2}", result.Current, result.Total, result.Text);
+                if (result.Total == result.Current)
+                    ProgressVisible = Visibility.Collapsed;
+                else
+                {
+                    ProgressVisible = Visibility.Visible;
+                    ProgressMaximum = result.Total;
+                    ProgressValue = result.Current;
+                    //ProgressValueTaskbar = (double)result.Current / (double)result.Total;
+                    ProgressText = String.Format("{0} / {1}  {2}", result.Current, result.Total, result.Text);
+                }
             });
 
             System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
@@ -137,11 +143,25 @@ namespace FaceRecognitionWPF.ViewModel
         string _progressText;
         public string ProgressText
         {
-            get => this._progressText;
+            get => _progressText;
             set
             {
-                this._progressText = value;
+                _progressText = value;
                 this.OnPropertyChanged();
+            }
+        }
+
+        Visibility _progressVisible;
+        public Visibility ProgressVisible
+        {
+            get => _progressVisible;
+            set
+            {
+                if (_progressVisible != value)
+                {
+                    _progressVisible = value;
+                    this.OnPropertyChanged();
+                }
             }
         }
 
@@ -226,7 +246,7 @@ namespace FaceRecognitionWPF.ViewModel
         }
 
         private void AddToViewImage(string imageFile, ObservableCollection<DirectoryWithFaces> directoriesWithFaces,
-            VoteAndDistance predict, int left, int top, int width, int height)
+            VoteAndDistance predict, int left, int top, int width, int height, int locationsCount)
         {
             //Debug.WriteLine($"Добавление на форму {imageFile} left={left}, top={top}, width={width}, height={height}");
             //Debug.WriteLine($"{imageFile} predict left={predict.ClassInfo.FaceLocation.Left}, top={predict.ClassInfo.FaceLocation.Top}, right={predict.ClassInfo.FaceLocation.Right}, bottom={predict.ClassInfo.FaceLocation.Bottom}");
@@ -263,7 +283,8 @@ namespace FaceRecognitionWPF.ViewModel
                         Width = width,
                         Height = height,
                         SortedInfos = predict.SortedInfos,
-                        TestData = predict.TestData
+                        TestData = predict.TestData,
+                        LocationsCount = locationsCount
                     });
                 }
                 catch (Exception ex)
@@ -285,60 +306,107 @@ namespace FaceRecognitionWPF.ViewModel
                 {
                     if (faceInfo != null)
                     {
-                        ICommand saveAsPredictedCommand = new RelayCommand(arg =>
-                        {
-                            //Debug.WriteLine($"Сохранения изображения {faceInfo.Path} c координатами left={faceInfo.ClassInfo.FaceLocation.Left}, top={faceInfo.ClassInfo.FaceLocation.Top}, right={faceInfo.ClassInfo.FaceLocation.Right}, bottom={faceInfo.ClassInfo.FaceLocation.Bottom}");
-                            //FaceViewModel vm = new FaceViewModel(faceInfo.ClassInfo.FaceLocation, faceInfo.Path);
-                            //_windowService.ShowDialogWindow<FaceWindow>(vm);
-
-                            ImageHelper.SaveToClass(faceInfo.Predict,
-                                _configuration.TrainPath,
-                                faceInfo.Path, _percentageOfBorder, faceInfo.Left, faceInfo.Top, faceInfo.Width, faceInfo.Height);
-                            //BitmapEncoder encoder = new JpegBitmapEncoder();
-                            //encoder.Frames.Add(BitmapFrame.Create((BitmapSource)faceInfo.Image));
-                            //string fileName = Path.GetFileName(faceInfo.Path);
-                            //string targetPath = Path.Combine(_configuration.TrainPath, faceInfo.Predict, fileName);
-                            //if (File.Exists(targetPath))
-                            //    throw new Exception($"File {targetPath} already exist!");
-                            //using (var fileStream = new System.IO.FileStream(targetPath, System.IO.FileMode.Create))
-                            //{
-                            //    encoder.Save(fileStream);
-                            //}
-                            _lastSavedClass = faceInfo.Predict;
-                        });
-
                         List<BindableMenuItem> menu = new List<BindableMenuItem>();
-                        BindableMenuItem menuItem1 = new BindableMenuItem();
-                        menuItem1.Name = $"Save as {faceInfo.Predict}";
-                        menuItem1.Command = saveAsPredictedCommand;
-                        menu.Add(menuItem1);
 
-                        if (!String.IsNullOrEmpty(_lastSavedClass) && faceInfo.Predict != _lastSavedClass)
+                        if (faceInfo.LocationsCount > 1)
                         {
-                            BindableMenuItem menuItem2 = new BindableMenuItem();
-                            menuItem2.Name = $"Save as {_lastSavedClass}";
-                            //menuItem2.Command = saveAsPredictedCommand;
-                            menu.Add(menuItem2);
+                            ICommand saveAsPredictedCommand = new RelayCommand(arg =>
+                            {
+                                //Debug.WriteLine($"Сохранения изображения {faceInfo.Path} c координатами left={faceInfo.ClassInfo.FaceLocation.Left}, top={faceInfo.ClassInfo.FaceLocation.Top}, right={faceInfo.ClassInfo.FaceLocation.Right}, bottom={faceInfo.ClassInfo.FaceLocation.Bottom}");
+                                //FaceViewModel vm = new FaceViewModel(faceInfo.ClassInfo.FaceLocation, faceInfo.Path);
+                                //_windowService.ShowDialogWindow<FaceWindow>(vm);
+
+                                ImageHelper.SaveToClass(faceInfo.Predict,
+                                        _configuration.TrainPath,
+                                        faceInfo.Path, _percentageOfBorder, faceInfo.Left, faceInfo.Top, faceInfo.Width, faceInfo.Height);
+                                //BitmapEncoder encoder = new JpegBitmapEncoder();
+                                //encoder.Frames.Add(BitmapFrame.Create((BitmapSource)faceInfo.Image));
+                                //string fileName = Path.GetFileName(faceInfo.Path);
+                                //string targetPath = Path.Combine(_configuration.TrainPath, faceInfo.Predict, fileName);
+                                //if (File.Exists(targetPath))
+                                //    throw new Exception($"File {targetPath} already exist!");
+                                //using (var fileStream = new System.IO.FileStream(targetPath, System.IO.FileMode.Create))
+                                //{
+                                //    encoder.Save(fileStream);
+                                //}
+                                _lastSavedClass = faceInfo.Predict;
+                            });
+                            BindableMenuItem menuItem1 = new BindableMenuItem();
+                            menuItem1.Name = $"Save as {faceInfo.Predict}";
+                            menuItem1.Command = saveAsPredictedCommand;
+                            menu.Add(menuItem1);
+
+
+                            if (!String.IsNullOrEmpty(_lastSavedClass) && faceInfo.Predict != _lastSavedClass)
+                            {
+                                ICommand saveAsLastSavedCommand = new RelayCommand(arg =>
+                                {
+                                    ImageHelper.SaveToClass(_lastSavedClass,
+                                            _configuration.TrainPath,
+                                            faceInfo.Path, _percentageOfBorder, faceInfo.Left, faceInfo.Top, faceInfo.Width, faceInfo.Height);
+                                });
+                                BindableMenuItem menuItemSaveLast = new BindableMenuItem();
+                                menuItemSaveLast.Name = $"Save as {_lastSavedClass}";
+                                menuItemSaveLast.Command = saveAsLastSavedCommand;
+                                menu.Add(menuItemSaveLast);
+                            }
+
+                            ICommand saveAsCommand = new RelayCommand(arg =>
+                            {
+                                ClassSelecterViewModel vm = new ClassSelecterViewModel(_classes);
+                                var result = _windowService.ShowDialogWindow<ClassSelecterWindow>(vm);
+                                if (result.HasValue && result.Value)
+                                {
+                                    ImageHelper.SaveToClass(vm.SelectedClass,
+                                       _configuration.TrainPath,
+                                       faceInfo.Path, _percentageOfBorder, faceInfo.Left, faceInfo.Top, faceInfo.Width, faceInfo.Height);
+                                    _lastSavedClass = vm.SelectedClass;
+                                }
+                            }, arg => _windowService != null);
+                            BindableMenuItem menuItemSaveAs = new BindableMenuItem();
+                            menuItemSaveAs.Name = "Save as...";
+                            menuItemSaveAs.Command = saveAsCommand;
+                            menu.Add(menuItemSaveAs);
+
+
+                            if (!String.IsNullOrEmpty(_lastSavedClass) && faceInfo.Predict != _lastSavedClass)
+                            {
+                                BindableMenuItem menuItem2 = new BindableMenuItem();
+                                menuItem2.Name = $"Save as {_lastSavedClass}";
+                                menu.Add(menuItem2);
+                            }
+                        }
+                        else
+                        {
+                            ICommand copyToPredictCommand = new RelayCommand(arg =>
+                            {
+                                string targetPath = ImageHelper.GetTargetPath(faceInfo.Predict,
+                                    _configuration.TrainPath, faceInfo.Path);
+                                File.Copy(faceInfo.Path, targetPath);
+                                _lastSavedClass = faceInfo.Predict;
+                            }, arg => _windowService != null);
+                            BindableMenuItem menuItemCopyToPredict = new BindableMenuItem();
+                            menuItemCopyToPredict.Name = $"Copy to {faceInfo.Predict}";
+                            menuItemCopyToPredict.Command = copyToPredictCommand;
+                            menu.Add(menuItemCopyToPredict);
+
+                            if (!String.IsNullOrEmpty(_lastSavedClass) && faceInfo.Predict != _lastSavedClass)
+                            {
+                                ICommand copyLastSavedCommand = new RelayCommand(arg =>
+                                {
+                                    string targetPath = ImageHelper.GetTargetPath(_lastSavedClass,
+                                                                     _configuration.TrainPath, faceInfo.Path);
+                                    File.Copy(faceInfo.Path, targetPath);
+                                });
+                                BindableMenuItem menuItemCopyLast = new BindableMenuItem();
+                                menuItemCopyLast.Name = $"Copy to {_lastSavedClass}";
+                                menuItemCopyLast.Command = copyLastSavedCommand;
+                                menu.Add(menuItemCopyLast);
+                            }
                         }
 
-                        ICommand saveAsCommand = new RelayCommand(arg =>
-                        {
-                            ClassSelecterViewModel vm = new ClassSelecterViewModel(_classes);
-                            var result = _windowService.ShowDialogWindow<ClassSelecterWindow>(vm);
-                            if (result.HasValue && result.Value)
-                            {
-                                ImageHelper.SaveToClass(vm.SelectedClass,
-                                   _configuration.TrainPath,
-                                   faceInfo.Path, _percentageOfBorder, faceInfo.Left, faceInfo.Top, faceInfo.Width, faceInfo.Height);
-                                _lastSavedClass = vm.SelectedClass;
-                            }
-                        }, arg => _windowService != null);
-                        BindableMenuItem menuItemSaveAs = new BindableMenuItem();
-                        menuItemSaveAs.Name = "Save as...";
-                        menuItemSaveAs.Command = saveAsCommand;
-                        menu.Add(menuItemSaveAs);
 
-                        ICommand copeToCommand = new RelayCommand(arg =>
+                        ICommand copyToCommand = new RelayCommand(arg =>
                         {
                             ClassSelecterViewModel vm = new ClassSelecterViewModel(_classes);
                             var result = _windowService.ShowDialogWindow<ClassSelecterWindow>(vm);
@@ -352,7 +420,7 @@ namespace FaceRecognitionWPF.ViewModel
                         }, arg => _windowService != null);
                         BindableMenuItem menuItemCopyTo = new BindableMenuItem();
                         menuItemCopyTo.Name = "Copy to...";
-                        menuItemCopyTo.Command = copeToCommand;
+                        menuItemCopyTo.Command = copyToCommand;
                         menu.Add(menuItemCopyTo);
 
                         ICommand showInfoCommand = new RelayCommand(arg =>

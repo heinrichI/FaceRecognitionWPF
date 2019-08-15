@@ -16,7 +16,8 @@
         </Menu>
 
 
-        <Grid DockPanel.Dock="Bottom">
+        <Grid DockPanel.Dock="Bottom"
+              Visibility="{Binding ProgressVisible}">
             <ProgressBar Value="{Binding ProgressValue}"
                      Height="10"
                      Maximum="{Binding ProgressMaximum}"/>
@@ -68,8 +69,6 @@
         HorizontalAlignment="Center" VerticalAlignment="Stretch" />-->
 
         <ScrollViewer Grid.Column="1">
-            
-
         <DataGrid 
             ItemsSource="{Binding DirectoriesWithFaces}" 
                       AutoGenerateColumns="False"

@@ -6,6 +6,8 @@ using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 namespace FaceRecognitionWPF.ViewModel
 {
@@ -17,6 +19,25 @@ namespace FaceRecognitionWPF.ViewModel
             TestData = faceInfo.TestData;
 
             TrainPath = faceInfo.SortedInfos.First().ImagePath;
+            TestPath = faceInfo.Path;
+
+            BitmapImage trainBitmap = new BitmapImage();
+            trainBitmap.BeginInit();
+            trainBitmap.UriSource = new Uri(TrainPath, UriKind.Relative);
+            trainBitmap.CacheOption = BitmapCacheOption.OnLoad;
+            trainBitmap.EndInit();
+            if (trainBitmap.CanFreeze)
+                trainBitmap.Freeze();
+            TrainImage = trainBitmap;
+
+            BitmapImage testBitmap = new BitmapImage();
+            testBitmap.BeginInit();
+            testBitmap.UriSource = new Uri(TestPath, UriKind.Relative);
+            testBitmap.CacheOption = BitmapCacheOption.OnLoad;
+            testBitmap.EndInit();
+            if (testBitmap.CanFreeze)
+                testBitmap.Freeze();
+            TestImage = testBitmap;
         }
 
         public void OnClosing(object sender, CancelEventArgs e)
@@ -26,33 +47,67 @@ namespace FaceRecognitionWPF.ViewModel
         double[] _trainData;
         public double[] TrainData
         {
-            get => this._trainData;
+            get => _trainData;
             set
             {
-                this._trainData = value;
-                this.OnPropertyChanged();
+                _trainData = value;
+                OnPropertyChanged();
+            }
+        }
+
+
+        double[] _testData;
+        public double[] TestData
+        {
+            get => _testData;
+            set
+            {
+                _testData = value;
+                OnPropertyChanged();
             }
         }
 
         string _trainPath;
         public string TrainPath
         {
-            get => this._trainPath;
+            get => _trainPath;
             set
             {
-                this._trainPath = value;
-                this.OnPropertyChanged();
+                _trainPath = value;
+                OnPropertyChanged();
             }
         }
 
-        double[] _testData;
-        public double[] TestData
+        string _testPath;
+        public string TestPath
         {
-            get => this._testData;
+            get => _testPath;
             set
             {
-                this._testData = value;
-                this.OnPropertyChanged();
+                _testPath = value;
+                OnPropertyChanged();
+            }
+        }
+
+        ImageSource _trainImage;
+        public ImageSource TrainImage
+        {
+            get => _trainImage;
+            set
+            {
+                _trainImage = value;
+                OnPropertyChanged();
+            }
+        }
+
+        ImageSource _testImage;
+        public ImageSource TestImage
+        {
+            get => _testImage;
+            set
+            {
+                _testImage = value;
+                OnPropertyChanged();
             }
         }
     }

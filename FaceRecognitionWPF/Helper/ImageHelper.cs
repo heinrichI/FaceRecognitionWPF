@@ -61,8 +61,8 @@ namespace FaceRecognitionWPF.Helper
 
             ImageCodecInfo jpgEncoder = GetEncoder(ImageFormat.Jpeg);
 
-            // Create an Encoder object based on the GUID  
-            // for the Quality parameter category.  
+            //// Create an Encoder object based on the GUID  
+            //// for the Quality parameter category.  
             System.Drawing.Imaging.Encoder myEncoder =
                 System.Drawing.Imaging.Encoder.Quality;
 
@@ -71,10 +71,11 @@ namespace FaceRecognitionWPF.Helper
             // objects. In this case, there is only one  
             // EncoderParameter object in the array.  
             EncoderParameters myEncoderParameters = new EncoderParameters(1);
-            EncoderParameter myEncoderParameter = new EncoderParameter(myEncoder, 95L);
+            EncoderParameter myEncoderParameter = new EncoderParameter(myEncoder, 98L);
             myEncoderParameters.Param[0] = myEncoderParameter;
 
             cropped.Save(targetPath, jpgEncoder, myEncoderParameters);
+            //cropped.Save(targetPath, ImageFormat.Png);
         }
 
         private static ImageCodecInfo GetEncoder(ImageFormat format)
