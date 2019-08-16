@@ -49,6 +49,20 @@ namespace FaceRecognitionWPF.View
             return result;
         }
 
+        public void ShowAboutWindow()
+        {
+            Window activeWindow = _activeWindow;
+            if (activeWindow == null)
+                throw new NullReferenceException("ActiveWindow");
+
+            var view = new AboutWindow();
+            view.Owner = activeWindow;
+            view.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+            ApplyEffect(view.Owner);
+            view.ShowDialog();
+            ClearEffect(view.Owner);
+        }
+
         /// <summary>
         /// Apply Blur Effect on the window
         /// </summary>
