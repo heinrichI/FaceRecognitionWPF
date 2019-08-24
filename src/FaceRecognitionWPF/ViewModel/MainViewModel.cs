@@ -442,27 +442,6 @@ namespace FaceRecognitionWPF.ViewModel
         }
 
 
-        private RelayCommand _checkDataBaseCommand;
-        public RelayCommand CheckDataBaseCommand
-        {
-            get
-            {
-                return _checkDataBaseCommand ?? (_checkDataBaseCommand = new RelayCommand((arg) =>
-                {
-                    Task.Run(() =>
-                    {
-                        using (var db = TinyIoC.TinyIoCContainer.Current.Resolve<IDataBaseManager>(
-    new NamedParameterOverloads() { { "dataBaseName", "faces.litedb" } }))
-                        {
-                            CheckManager checkManager = new CheckManager(db, _configuration, _progress);
-                            MessageBox.Show("Checked!");
-                        }
-                    });
-                }, (arg) => true));
-            }
-        }
-
-
         private RelayCommand _showAnotherClassAndDistanceMoreThanCommand;
         public RelayCommand ShowAnotherClassAndDistanceMoreThanCommand
         {
@@ -546,5 +525,71 @@ namespace FaceRecognitionWPF.ViewModel
                 }));
             }
         }
+
+
+        private RelayCommand _checkDataBaseCommand;
+        public RelayCommand CheckDataBaseCommand
+        {
+            get
+            {
+                return _checkDataBaseCommand ?? (_checkDataBaseCommand = new RelayCommand((arg) =>
+                {
+                    Task.Run(() =>
+                    {
+                        using (var db = TinyIoC.TinyIoCContainer.Current.Resolve<IDataBaseManager>(
+    new NamedParameterOverloads() { { "dataBaseName", "faces.litedb" } }))
+                        {
+                            CheckManager checkManager = new CheckManager(db, _configuration, _progress);
+                            MessageBox.Show("Checked!");
+                        }
+                    });
+                }, (arg) => true));
+            }
+        }
+
+        private RelayCommand _convertToLowerCaseCommand;
+        public RelayCommand ConvertToLowerCaseCommand
+        {
+            get
+            {
+                return _convertToLowerCaseCommand ?? (_convertToLowerCaseCommand = new RelayCommand((arg) =>
+                {
+                    Task.Run(() =>
+                    {
+                        using (var db = TinyIoC.TinyIoCContainer.Current.Resolve<IDataBaseManager>(
+    new NamedParameterOverloads() { { "dataBaseName", "faces.litedb" } }))
+                        {
+                            ConvertToLowerCaseManager checkManager = new ConvertToLowerCaseManager(db, _progress);
+                            var message = checkManager.Convert();
+                            MessageBox.Show($"Converted done, {message}");
+                        }
+                    });
+                }));
+            }
+        }
+
+        private RelayCommand _removeRecordForUnexistFilesCommand;
+        public RelayCommand RemoveRecordForUnexistFilesCommand
+        {
+            get
+            {
+                return _removeRecordForUnexistFilesCommand ?? (_removeRecordForUnexistFilesCommand = new RelayCommand((arg) =>
+                {
+                    Task.Run(() =>
+                    {
+                        using (var db = TinyIoC.TinyIoCContainer.Current.Resolve<IDataBaseManager>(
+    new NamedParameterOverloads() { { "dataBaseName", "faces.litedb" } }))
+                        {
+                            RemoveRecordForUnexistFilesManager checkManager = 
+                                new RemoveRecordForUnexistFilesManager(db, _progress);
+                            var message = checkManager.Remove();
+                            MessageBox.Show($"Remove done, {message}");
+                        }
+                    });
+                }));
+            }
+        }
+        
+
     }
 }

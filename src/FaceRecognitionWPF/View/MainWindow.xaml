@@ -11,8 +11,14 @@
 
 <DockPanel>
         <Menu DockPanel.Dock="Top">
-            <MenuItem Header="Check data base"
-                      Command="{Binding CheckDataBaseCommand}" />
+            <MenuItem Header="Data base">
+                <MenuItem Header="Check data base"
+                          Command="{Binding CheckDataBaseCommand}" />
+                <MenuItem Header="Convert to lower case"
+                          Command="{Binding ConvertToLowerCaseCommand}" />
+                <MenuItem Header="Remove record for unexist files"
+                          Command="{Binding RemoveRecordForUnexistFilesCommand}" />
+            </MenuItem>
             <MenuItem Header="About"
                       Command="{Binding AboutCommand}" />
         </Menu>

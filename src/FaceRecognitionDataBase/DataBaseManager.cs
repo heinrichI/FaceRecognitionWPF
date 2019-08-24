@@ -32,6 +32,7 @@ namespace FaceRecognitionDataBase
                 .Id(f => f.Path);
 
             _db = new LiteDatabase(dataBaseName);
+            //_db.Shrink();
 
             _faceCollection = _db.GetCollection<FaceEncodingInfo>("FaceEncodingInfo");
             _faceCollection.EnsureIndex(x => x.Path);
@@ -46,17 +47,26 @@ namespace FaceRecognitionDataBase
 
         public FaceEncodingInfo GetFromDB(string imageFile)
         {
-            var info = _faceCollection.Include(x => x.FingerAndLocations).FindById(imageFile);
-            if (info != null)
+            try
             {
-                var fi = new FileInfo(imageFile);
-                //Debug.WriteLine(fi.LastWriteTime.Ticks);
-                if (fi.LastWriteTime.ToLongTimeString() == info.LastWriteTime.ToLongTimeString()
-                    && fi.LastWriteTime.ToLongDateString() == info.LastWriteTime.ToLongDateString()
-                    && fi.Length == info.Length)
-                    return info;
-                else
-                    Debug.WriteLine($"Не совпадает LastWriteTime Length {imageFile}");
+                string imageFileLower = imageFile.ToLower();
+                var info = _faceCollection.Include(x => x.FingerAndLocations).FindById(imageFileLower);
+                if (info != null)
+                {
+                    var fi = new FileInfo(imageFileLower);
+                    //Debug.WriteLine(fi.LastWriteTime.Ticks);
+                    if (fi.LastWriteTime.ToLongTimeString() == info.LastWriteTime.ToLongTimeString()
+                        && fi.LastWriteTime.ToLongDateString() == info.LastWriteTime.ToLongDateString()
+                        && fi.Length == info.Length)
+                        return info;
+                    else
+                        Debug.WriteLine($"Не совпадает LastWriteTime Length {imageFile}");
+                }
+            }
+            catch (InvalidCastException ex)
+            {
+                bool result = _faceCollection.Delete(imageFile);
+                return null;
             }
             return null;
         }
@@ -64,12 +74,13 @@ namespace FaceRecognitionDataBase
 
         public void AddFaceInfo(string imageFile, double[] doubleInfo, int left, int right, int top, int bottom)
         {
-            FaceEncodingInfo faceEncodingInfo = GetFromDB(imageFile);
+            string imageFileLower = imageFile.ToLower();
+            FaceEncodingInfo faceEncodingInfo = GetFromDB(imageFileLower);
             //if (faceEncodingInfo != null)
             //    throw new Exception($"{imageFile} уже есть в базе!");
 
             if (faceEncodingInfo == null)
-                faceEncodingInfo = new FaceEncodingInfo(imageFile);
+                faceEncodingInfo = new FaceEncodingInfo(imageFileLower);
 
             FingerAndLocation fingerAndLocation = new FingerAndLocation();
             fingerAndLocation.FingerPrint = doubleInfo;
@@ -94,15 +105,8 @@ namespace FaceRecognitionDataBase
             && fe.Top == fingerAndLocation.Top
             && fe.FingerPrint.SequenceEqual(fingerAndLocation.FingerPrint)))
                 faceEncodingInfo.FingerAndLocations.Add(fingerAndLocation);
-            try
-            {
-                _faceCollection.Upsert(faceEncodingInfo);
-            }
-            catch (Exception ex)
-            {
 
-                throw;
-            }
+            _faceCollection.Upsert(faceEncodingInfo);
 
             //var info = _faceCollection.Include(x => x.FingerAndLocations).FindById(imageFile);
             //if (info.FingerAndLocations.First().Left != faceEncodingInfo.FingerAndLocations.First().Left)
@@ -111,17 +115,34 @@ namespace FaceRecognitionDataBase
 
         public void AddFileWithoutFace(string imageFile)
         {
-            FaceEncodingInfo faceEncodingInfo = GetFromDB(imageFile);
+            string imageFileLower = imageFile.ToLower();
+
+            FaceEncodingInfo faceEncodingInfo = GetFromDB(imageFileLower);
             if (faceEncodingInfo != null)
                 throw new Exception($"{imageFile} уже есть в базе!");
 
-            faceEncodingInfo = new FaceEncodingInfo(imageFile);
+            faceEncodingInfo = new FaceEncodingInfo(imageFileLower);
             _faceCollection.Upsert(faceEncodingInfo);
         }
 
         public IEnumerable<FaceEncodingInfo> GetAll()
         {
             return _faceCollection.Include(x => x.FingerAndLocations).FindAll();
+        }
+
+        public int Remove(string path)
+        {
+            return _faceCollection.Delete((FaceEncodingInfo info) => info.Path == path);
+        }
+
+        public bool UpsertFaceInfo(FaceEncodingInfo info)
+        {
+            return _faceCollection.Upsert(info);
+        }
+
+        public long Shrink()
+        {
+            return _db.Engine.Shrink();
         }
     }
 }

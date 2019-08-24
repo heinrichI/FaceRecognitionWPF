@@ -28,7 +28,7 @@ namespace FaceRecognitionWPF
             _configuration = configuration;
             _progress = progress;
 
-            var allInfo = db.GetAll();
+            var allInfo = db.GetAll().ToList();
             _progressMaximum = allInfo.Count();
             _checkQueue = new Queue<FaceEncodingInfo>(allInfo);
 

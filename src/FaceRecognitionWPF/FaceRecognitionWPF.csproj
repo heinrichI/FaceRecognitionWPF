@@ -117,11 +117,13 @@
     </ApplicationDefinition>
     <Compile Include="BaseManager.cs" />
     <Compile Include="CheckManager.cs" />
+    <Compile Include="ConvertToLowerCaseManager.cs" />
     <Compile Include="Helper\RenameHelper.cs" />
     <Compile Include="Menu\ImageContextMenuItemSourceBindingOnOpenBehavior.cs" />
     <Compile Include="Helper\ImageHelper.cs" />
     <Compile Include="Menu\BindableMenuItem.cs" />
     <Compile Include="RelayCommand.cs" />
+    <Compile Include="RemoveRecordForUnexistFilesManager.cs" />
     <Compile Include="SearchManager.cs" />
     <Compile Include="TrainManager.cs" />
     <Compile Include="ViewModel\BoolEventHandler.cs" />
