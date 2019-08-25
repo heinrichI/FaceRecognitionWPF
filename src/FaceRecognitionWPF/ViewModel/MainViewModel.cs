@@ -367,14 +367,6 @@ namespace FaceRecognitionWPF.ViewModel
                             menuItemSaveAs.Name = "Save as...";
                             menuItemSaveAs.Command = saveAsCommand;
                             menu.Add(menuItemSaveAs);
-
-
-                            if (!String.IsNullOrEmpty(_lastSavedClass) && faceInfo.Predict != _lastSavedClass)
-                            {
-                                BindableMenuItem menuItem2 = new BindableMenuItem();
-                                menuItem2.Name = $"Save as {_lastSavedClass}";
-                                menu.Add(menuItem2);
-                            }
                         }
                         else
                         {
