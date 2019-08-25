@@ -189,6 +189,18 @@ namespace FaceRecognitionWPF.ViewModel
             }
         }
 
+        bool _settingExpanded = true;
+        public bool SettingExpanded
+        {
+            get => this._settingExpanded;
+            set
+            {
+                this._settingExpanded = value;
+                this.OnPropertyChanged();
+            }
+        }
+        
+
         private RelayCommand _runCommand;
         public RelayCommand RunCommand
         {
@@ -200,6 +212,7 @@ namespace FaceRecognitionWPF.ViewModel
                     //{
                     //    Progress = percent;
                     //});
+                    SettingExpanded = false;
 
                     try
                     {

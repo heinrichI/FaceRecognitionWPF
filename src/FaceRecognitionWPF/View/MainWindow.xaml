@@ -36,7 +36,7 @@
         <FrameworkElement x:Name="dummyElement" Visibility="Collapsed"/>
 
         <Expander ExpandDirection="Right"
-              IsExpanded="True">
+              IsExpanded="{Binding SettingExpanded}">
             <Expander.Header>
                 <TextBlock Text="Setting">
                     <TextBlock.LayoutTransform>
