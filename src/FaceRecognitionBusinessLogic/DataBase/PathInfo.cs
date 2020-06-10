@@ -7,15 +7,9 @@ using System.Threading.Tasks;
 
 namespace FaceRecognitionBusinessLogic.DataBase
 {
-    public class FaceEncodingInfo
+    public class PathInfo
     {
-        public FaceEncodingInfo()
-        {
-            FingerAndLocations = new List<FingerAndLocation>();
-            //NotPerson = new List<string>();
-        }
-
-        public FaceEncodingInfo(string path) : this()
+        public PathInfo(string path)
         {
             this.Path = path;
 
@@ -31,7 +25,6 @@ namespace FaceRecognitionBusinessLogic.DataBase
 
         public DateTime LastWriteTime { get; set; }
 
-        public List<FingerAndLocation> FingerAndLocations { get; set; }
 
         //public List<string> NotPerson { get; set; }
     }

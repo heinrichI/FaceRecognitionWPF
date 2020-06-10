@@ -95,13 +95,14 @@ namespace FaceRecognitionWPF
 
                     //load image
                     //using (var ms = new MemoryStream(File.ReadAllBytes(imageFile3)))
-                    FaceEncodingInfo founded;
+                    PathInfo founded;
                     lock (_dbLocker)
                     {
                         founded = _db.GetFromDB(imagePath);
                     }
                     if (founded == null)
                     {
+                        Debug.WriteLine($"Not found {imagePath} in db. Thread {Thread.CurrentThread.ManagedThreadId}");
                         FaceRecognitionDotNet.Image unknownImage;
                         try
                         {
@@ -124,6 +125,7 @@ namespace FaceRecognitionWPF
                                 Debug.WriteLine($"In {imagePath} not found faces");
                                 lock (_dbLocker)
                                 {
+                                    Debug.WriteLine($"AddFileWithoutFace {imagePath} in db.");
                                     _db.AddFileWithoutFace(imagePath);
                                 }
                                 continue;

@@ -12,11 +12,13 @@ namespace FaceRecognitionDataBase
 {
     public class DataBaseManager : IDataBaseManager
     {
-        LiteDatabase _db;
-        LiteCollection<FaceEncodingInfo> _faceCollection;
+        LiteDatabase _pathDb;
+        LiteDatabase _md5Db;
+
+        LiteCollection<PathInfo> _pathCollection;
         LiteCollection<FingerAndLocation> _fingerCollection;
 
-        public DataBaseManager(string dataBaseName)
+        public DataBaseManager(string pathDbName, string md5DbName)
         {
             ////// Re-use mapper from global instance
             var mapper = BsonMapper.Global;
@@ -26,31 +28,35 @@ namespace FaceRecognitionDataBase
             //    .Id(x => x.Id);
 
             //// "Products" and "Customer" are from other collections (not embedded document)
-            mapper.Entity<FaceEncodingInfo>()
+            mapper.Entity<FaceInfo>()
                 .DbRef(x => x.FingerAndLocations, "FingerAndLocations")    // 1 to Many reference
                  //.DbRef(x => x.NotPerson, "NotPerson")
-                .Id(f => f.Path);
+                .Id(f => f.Md5);
 
-            _db = new LiteDatabase(dataBaseName);
-            //_db.Shrink();
+            _pathDb = new LiteDatabase(pathDbName);
 
-            _faceCollection = _db.GetCollection<FaceEncodingInfo>("FaceEncodingInfo");
-            _faceCollection.EnsureIndex(x => x.Path);
+            _pathCollection = _pathDb.GetCollection<PathInfo>("FaceEncodingInfo");
+            _pathCollection.EnsureIndex(x => x.Path);
 
-            _fingerCollection = _db.GetCollection<FingerAndLocation>("FingerAndLocations");
+            _fingerCollection = _pathDb.GetCollection<FingerAndLocation>("FingerAndLocations");
+
+            _md5Db = new LiteDatabase(md5DbName);
+            _md5hCollection
+
         }
 
         public void Dispose()
         {
-            _db.Dispose();
+            _pathDb.Dispose();
+            _md5Db.Dispose();
         }
 
-        public FaceEncodingInfo GetFromDB(string imageFile)
+        public PathInfo GetFromDB(string imageFile)
         {
             try
             {
                 string imageFileLower = imageFile.ToLower();
-                var info = _faceCollection.Include(x => x.FingerAndLocations).FindById(imageFileLower);
+                var info = _pathCollection.Include(x => x.FingerAndLocations).FindById(imageFileLower);
                 if (info != null)
                 {
                     var fi = new FileInfo(imageFileLower);
@@ -62,10 +68,14 @@ namespace FaceRecognitionDataBase
                     else
                         Debug.WriteLine($"Не совпадает LastWriteTime Length {imageFile}");
                 }
+                else
+                {
+                    Calculate md5
+                }
             }
             catch (InvalidCastException ex)
             {
-                bool result = _faceCollection.Delete(imageFile);
+                bool result = _pathCollection.Delete(imageFile);
                 return null;
             }
             return null;
@@ -75,12 +85,12 @@ namespace FaceRecognitionDataBase
         public void AddFaceInfo(string imageFile, double[] doubleInfo, int left, int right, int top, int bottom)
         {
             string imageFileLower = imageFile.ToLower();
-            FaceEncodingInfo faceEncodingInfo = GetFromDB(imageFileLower);
+            PathInfo faceEncodingInfo = GetFromDB(imageFileLower);
             //if (faceEncodingInfo != null)
             //    throw new Exception($"{imageFile} уже есть в базе!");
 
             if (faceEncodingInfo == null)
-                faceEncodingInfo = new FaceEncodingInfo(imageFileLower);
+                faceEncodingInfo = new PathInfo(imageFileLower);
 
             FingerAndLocation fingerAndLocation = new FingerAndLocation();
             fingerAndLocation.FingerPrint = doubleInfo;
@@ -106,7 +116,7 @@ namespace FaceRecognitionDataBase
             && fe.FingerPrint.SequenceEqual(fingerAndLocation.FingerPrint)))
                 faceEncodingInfo.FingerAndLocations.Add(fingerAndLocation);
 
-            _faceCollection.Upsert(faceEncodingInfo);
+            _pathCollection.Upsert(faceEncodingInfo);
 
             //var info = _faceCollection.Include(x => x.FingerAndLocations).FindById(imageFile);
             //if (info.FingerAndLocations.First().Left != faceEncodingInfo.FingerAndLocations.First().Left)
@@ -117,32 +127,32 @@ namespace FaceRecognitionDataBase
         {
             string imageFileLower = imageFile.ToLower();
 
-            FaceEncodingInfo faceEncodingInfo = GetFromDB(imageFileLower);
+            PathInfo faceEncodingInfo = GetFromDB(imageFileLower);
             if (faceEncodingInfo != null)
                 throw new Exception($"{imageFile} уже есть в базе!");
 
-            faceEncodingInfo = new FaceEncodingInfo(imageFileLower);
-            _faceCollection.Upsert(faceEncodingInfo);
+            faceEncodingInfo = new PathInfo(imageFileLower);
+            _pathCollection.Upsert(faceEncodingInfo);
         }
 
-        public IEnumerable<FaceEncodingInfo> GetAll()
+        public IEnumerable<PathInfo> GetAll()
         {
-            return _faceCollection.Include(x => x.FingerAndLocations).FindAll();
+            return _pathCollection.Include(x => x.FingerAndLocations).FindAll();
         }
 
         public int Remove(string path)
         {
-            return _faceCollection.Delete((FaceEncodingInfo info) => info.Path == path);
+            return _pathCollection.Delete((PathInfo info) => info.Path == path);
         }
 
-        public bool UpsertFaceInfo(FaceEncodingInfo info)
+        public bool UpsertFaceInfo(PathInfo info)
         {
-            return _faceCollection.Upsert(info);
+            return _pathCollection.Upsert(info);
         }
 
         public long Shrink()
         {
-            return _db.Engine.Shrink();
+            return _pathDb.Engine.Shrink();
         }
     }
 }

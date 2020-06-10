@@ -13,7 +13,7 @@ namespace FaceRecognitionWPF
     {
         private IDataBaseManager _db;
         private IProgress<ProgressPartialResult> _progress;
-        IEnumerable<FaceEncodingInfo> _dbInfo;
+        IEnumerable<PathInfo> _dbInfo;
         int _progressMaximum;
 
         public ConvertToLowerCaseManager(IDataBaseManager db, IProgress<ProgressPartialResult> progress)

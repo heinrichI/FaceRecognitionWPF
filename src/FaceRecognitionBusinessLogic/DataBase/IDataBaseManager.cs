@@ -8,16 +8,16 @@ namespace FaceRecognitionBusinessLogic.DataBase
 {
     public interface IDataBaseManager : IDisposable
     {
-        FaceEncodingInfo GetFromDB(string imageFile);
+        PathInfo GetFromDB(string imageFile);
 
         void AddFaceInfo(string imageFile, double[] doubleInfo, 
             int left, int right, int top, int bottom);
         void AddFileWithoutFace(string imageFile);
 
-        IEnumerable<FaceEncodingInfo> GetAll();
+        IEnumerable<PathInfo> GetAll();
 
         int Remove(string path);
-        bool UpsertFaceInfo(FaceEncodingInfo info);
+        bool UpsertFaceInfo(PathInfo info);
         long Shrink();
     }
 }

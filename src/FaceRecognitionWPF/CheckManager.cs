@@ -15,7 +15,7 @@ namespace FaceRecognitionWPF
         static object _checkQueueLocker = new object();
         static object _progressLocker = new object();
 
-        Queue<FaceEncodingInfo> _checkQueue;
+        Queue<PathInfo> _checkQueue;
         IConfiguration _configuration;
 
         IProgress<ProgressPartialResult> _progress;
@@ -30,14 +30,14 @@ namespace FaceRecognitionWPF
 
             var allInfo = db.GetAll().ToList();
             _progressMaximum = allInfo.Count();
-            _checkQueue = new Queue<FaceEncodingInfo>(allInfo);
+            _checkQueue = new Queue<PathInfo>(allInfo);
 
             base.StartThreads(configuration.ThreadCount);
         }
 
         protected override void ThreadWork()
         {
-            FaceEncodingInfo faceEncodingInfo;
+            PathInfo faceEncodingInfo;
 
             using (var faceRecognition = FaceRecognition.Create(_configuration.ModelsDirectory))
             {

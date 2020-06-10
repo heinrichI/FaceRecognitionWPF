@@ -79,7 +79,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BasePropertyChanged.cs" />
-    <Compile Include="DataBase\FaceEncodingInfo.cs" />
+    <Compile Include="DataBase\FaceInfo.cs" />
+    <Compile Include="DataBase\PathInfo.cs" />
     <Compile Include="DataBase\FingerAndLocation.cs" />
     <Compile Include="DataBase\IDataBaseManager.cs" />
     <Compile Include="IConfiguration.cs" />

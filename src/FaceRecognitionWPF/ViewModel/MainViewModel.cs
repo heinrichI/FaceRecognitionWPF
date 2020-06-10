@@ -220,8 +220,7 @@ namespace FaceRecognitionWPF.ViewModel
                         await Task.Run(() =>
                         {
 
-                            using (var db = TinyIoC.TinyIoCContainer.Current.Resolve<IDataBaseManager>(
-                                new NamedParameterOverloads() { { "dataBaseName", "faces.litedb" } }))
+                            using (var db = GetDB()))
                             {
                                 if (_trainedInfo == null || !_trainedInfo.Any())
                                 {
@@ -456,8 +455,7 @@ namespace FaceRecognitionWPF.ViewModel
                 {
                     Task.Run(() =>
                     {
-                        using (var db = TinyIoC.TinyIoCContainer.Current.Resolve<IDataBaseManager>(
-                            new NamedParameterOverloads() { { "dataBaseName", "faces.litedb" } }))
+                        using (var db = GetDB()))
                         {
                             if (_trainedInfo == null || !_trainedInfo.Any())
                             {
@@ -498,8 +496,7 @@ namespace FaceRecognitionWPF.ViewModel
 
                     Task.Run(() =>
                     {
-                        using (var db = TinyIoC.TinyIoCContainer.Current.Resolve<IDataBaseManager>(
-                            new NamedParameterOverloads() { { "dataBaseName", "faces.litedb" } }))
+                        using (var db = GetDB()))
                         {
                             if (_trainedInfo == null || !_trainedInfo.Any())
                             {
@@ -541,8 +538,7 @@ namespace FaceRecognitionWPF.ViewModel
                 {
                     Task.Run(() =>
                     {
-                        using (var db = TinyIoC.TinyIoCContainer.Current.Resolve<IDataBaseManager>(
-    new NamedParameterOverloads() { { "dataBaseName", "faces.litedb" } }))
+                        using (var db = GetDB()))
                         {
                             CheckManager checkManager = new CheckManager(db, _configuration, _progress);
                             MessageBox.Show("Checked!");
@@ -561,8 +557,7 @@ namespace FaceRecognitionWPF.ViewModel
                 {
                     Task.Run(() =>
                     {
-                        using (var db = TinyIoC.TinyIoCContainer.Current.Resolve<IDataBaseManager>(
-    new NamedParameterOverloads() { { "dataBaseName", "faces.litedb" } }))
+                        using (var db = GetDB())
                         {
                             ConvertToLowerCaseManager checkManager = new ConvertToLowerCaseManager(db, _progress);
                             var message = checkManager.Convert();
@@ -573,6 +568,14 @@ namespace FaceRecognitionWPF.ViewModel
             }
         }
 
+        private IDataBaseManager GetDB()
+        {
+            return TinyIoC.TinyIoCContainer.Current.Resolve<IDataBaseManager>(
+                new NamedParameterOverloads() { { "pathDbName", "path.litedb" },
+                    {"md5DbName", "md5.litedb" } });
+        }
+    
+
         private RelayCommand _removeRecordForUnexistFilesCommand;
         public RelayCommand RemoveRecordForUnexistFilesCommand
         {
@@ -582,8 +585,7 @@ namespace FaceRecognitionWPF.ViewModel
                 {
                     Task.Run(() =>
                     {
-                        using (var db = TinyIoC.TinyIoCContainer.Current.Resolve<IDataBaseManager>(
-    new NamedParameterOverloads() { { "dataBaseName", "faces.litedb" } }))
+                        using (var db = GetDB()))
                         {
                             RemoveRecordForUnexistFilesManager checkManager = 
                                 new RemoveRecordForUnexistFilesManager(db, _progress);
