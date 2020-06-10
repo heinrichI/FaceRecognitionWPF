@@ -17,6 +17,7 @@ namespace FaceRecognitionDataBase
 
         LiteCollection<PathInfo> _pathCollection;
         LiteCollection<FingerAndLocation> _fingerCollection;
+        LiteCollection<FaceInfo> _md5Collection;
 
         public DataBaseManager(string pathDbName, string md5DbName)
         {
@@ -41,7 +42,7 @@ namespace FaceRecognitionDataBase
             _fingerCollection = _pathDb.GetCollection<FingerAndLocation>("FingerAndLocations");
 
             _md5Db = new LiteDatabase(md5DbName);
-            _md5hCollection
+            _md5Collection = _md5Db.GetCollection<FaceInfo>("FaceInfo");
 
         }
 
@@ -71,6 +72,10 @@ namespace FaceRecognitionDataBase
                 else
                 {
                     Calculate md5
+
+                    var info = _md5Collection.Include(x => x.FingerAndLocations).FindById(md5);
+
+                    _pathCollection.Upsert(pathInfo);
                 }
             }
             catch (InvalidCastException ex)
