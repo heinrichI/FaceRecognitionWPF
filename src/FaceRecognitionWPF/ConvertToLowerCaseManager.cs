@@ -9,7 +9,7 @@ using FaceRecognitionBusinessLogic.DataBase;
 
 namespace FaceRecognitionWPF
 {
-    class ConvertToLowerCaseManager 
+    /*class ConvertToLowerCaseManager 
     {
         private IDataBaseManager _db;
         private IProgress<ProgressPartialResult> _progress;
@@ -64,5 +64,5 @@ namespace FaceRecognitionWPF
             return $"Renamed {renamed}, duplicate {duplicate}";
         }
 
-    }
+    }*/
 }

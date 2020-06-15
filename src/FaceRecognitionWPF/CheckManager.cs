@@ -10,7 +10,7 @@ using FaceRecognitionDotNet;
 
 namespace FaceRecognitionWPF
 {
-    class CheckManager : BaseManager
+    /*class CheckManager : BaseManager
     {
         static object _checkQueueLocker = new object();
         static object _progressLocker = new object();
@@ -98,5 +98,5 @@ namespace FaceRecognitionWPF
 
             }
         }
-    }
+    }*/
 }

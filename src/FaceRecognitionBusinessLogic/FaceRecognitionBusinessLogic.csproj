@@ -83,6 +83,7 @@
     <Compile Include="DataBase\PathInfo.cs" />
     <Compile Include="DataBase\FingerAndLocation.cs" />
     <Compile Include="DataBase\IDataBaseManager.cs" />
+    <Compile Include="HashHelper.cs" />
     <Compile Include="IConfiguration.cs" />
     <Compile Include="KNN\ClassInfo.cs" />
     <Compile Include="KNN\IndexAndDistance.cs" />

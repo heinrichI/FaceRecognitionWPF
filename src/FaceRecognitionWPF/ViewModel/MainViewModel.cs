@@ -216,11 +216,9 @@ namespace FaceRecognitionWPF.ViewModel
 
                     try
                     {
-
                         await Task.Run(() =>
                         {
-
-                            using (var db = GetDB()))
+                            using (var db = GetDB())
                             {
                                 if (_trainedInfo == null || !_trainedInfo.Any())
                                 {
@@ -284,7 +282,7 @@ namespace FaceRecognitionWPF.ViewModel
 
                     ImageSource imageSource = ImageHelper.GetImageStream(croppedImage);
                     croppedImage.Dispose();
-                    dirWithFaces.Faces.Add(new FaceInfo()
+                    dirWithFaces.Faces.Add(new FaceRecognitionBusinessLogic.ObjectModel.FaceInfo()
                     {
                         Image = imageSource,
                         Path = imageFile,
@@ -310,7 +308,7 @@ namespace FaceRecognitionWPF.ViewModel
 
         private string _lastSavedClass;
 
-        public Func<FaceInfo, BindableMenuItem[]> MenuGeneratorFaceInfo
+        public Func<FaceRecognitionBusinessLogic.ObjectModel.FaceInfo, BindableMenuItem[]> MenuGeneratorFaceInfo
         {
             get
             {
@@ -455,7 +453,7 @@ namespace FaceRecognitionWPF.ViewModel
                 {
                     Task.Run(() =>
                     {
-                        using (var db = GetDB()))
+                        using (var db = GetDB())
                         {
                             if (_trainedInfo == null || !_trainedInfo.Any())
                             {
@@ -496,7 +494,7 @@ namespace FaceRecognitionWPF.ViewModel
 
                     Task.Run(() =>
                     {
-                        using (var db = GetDB()))
+                        using (var db = GetDB())
                         {
                             if (_trainedInfo == null || !_trainedInfo.Any())
                             {
@@ -538,11 +536,11 @@ namespace FaceRecognitionWPF.ViewModel
                 {
                     Task.Run(() =>
                     {
-                        using (var db = GetDB()))
-                        {
-                            CheckManager checkManager = new CheckManager(db, _configuration, _progress);
-                            MessageBox.Show("Checked!");
-                        }
+                        //using (var db = GetDB())
+                        //{
+                        //    CheckManager checkManager = new CheckManager(db, _configuration, _progress);
+                        //    MessageBox.Show("Checked!");
+                        //}
                     });
                 }, (arg) => true));
             }
@@ -559,9 +557,9 @@ namespace FaceRecognitionWPF.ViewModel
                     {
                         using (var db = GetDB())
                         {
-                            ConvertToLowerCaseManager checkManager = new ConvertToLowerCaseManager(db, _progress);
-                            var message = checkManager.Convert();
-                            MessageBox.Show($"Converted done, {message}");
+                            //ConvertToLowerCaseManager checkManager = new ConvertToLowerCaseManager(db, _progress);
+                            //var message = checkManager.Convert();
+                            //MessageBox.Show($"Converted done, {message}");
                         }
                     });
                 }));
@@ -585,12 +583,12 @@ namespace FaceRecognitionWPF.ViewModel
                 {
                     Task.Run(() =>
                     {
-                        using (var db = GetDB()))
+                        using (var db = GetDB())
                         {
-                            RemoveRecordForUnexistFilesManager checkManager = 
-                                new RemoveRecordForUnexistFilesManager(db, _progress);
-                            var message = checkManager.Remove();
-                            MessageBox.Show($"Remove done, {message}");
+                            //RemoveRecordForUnexistFilesManager checkManager = 
+                            //    new RemoveRecordForUnexistFilesManager(db, _progress);
+                            //var message = checkManager.Remove();
+                            //MessageBox.Show($"Remove done, {message}");
                         }
                     });
                 }));

@@ -1,4 +1,5 @@
-﻿using FaceRecognitionBusinessLogic.DataBase;
+﻿using FaceRecognitionBusinessLogic;
+using FaceRecognitionBusinessLogic.DataBase;
 using LiteDB;
 using System;
 using System.Collections.Generic;
@@ -43,7 +44,7 @@ namespace FaceRecognitionDataBase
 
             _md5Db = new LiteDatabase(md5DbName);
             _md5Collection = _md5Db.GetCollection<FaceInfo>("FaceInfo");
-
+            _md5Collection.EnsureIndex(x => x.Md5);
         }
 
         public void Dispose()
@@ -52,50 +53,55 @@ namespace FaceRecognitionDataBase
             _md5Db.Dispose();
         }
 
-        public PathInfo GetFromDB(string imageFile)
+        public FaceInfo GetFromDB(string imageFilePath)
         {
             try
             {
-                string imageFileLower = imageFile.ToLower();
-                var info = _pathCollection.Include(x => x.FingerAndLocations).FindById(imageFileLower);
-                if (info != null)
+                string imageFileLower = imageFilePath.ToLower();
+                var pathInfo = _pathCollection.FindById(imageFileLower);
+                if (pathInfo != null)
                 {
                     var fi = new FileInfo(imageFileLower);
                     //Debug.WriteLine(fi.LastWriteTime.Ticks);
-                    if (fi.LastWriteTime.ToLongTimeString() == info.LastWriteTime.ToLongTimeString()
-                        && fi.LastWriteTime.ToLongDateString() == info.LastWriteTime.ToLongDateString()
-                        && fi.Length == info.Length)
+                    if (fi.LastWriteTime.ToLongTimeString() == pathInfo.LastWriteTime.ToLongTimeString()
+                        && fi.LastWriteTime.ToLongDateString() == pathInfo.LastWriteTime.ToLongDateString()
+                        && fi.Length == pathInfo.Length)
+                    {
+                        var info = _md5Collection.Include(x => x.FingerAndLocations).FindById(pathInfo.Path);
+
                         return info;
+                    }
                     else
-                        Debug.WriteLine($"Не совпадает LastWriteTime Length {imageFile}");
+                        Debug.WriteLine($"Не совпадает LastWriteTime Length {imageFilePath}");
                 }
                 else
                 {
-                    Calculate md5
+                    string md5 = HashHelper.CreateMD5Checksum(imageFilePath);
 
                     var info = _md5Collection.Include(x => x.FingerAndLocations).FindById(md5);
 
                     _pathCollection.Upsert(pathInfo);
+
+                    return info;
                 }
             }
             catch (InvalidCastException ex)
             {
-                bool result = _pathCollection.Delete(imageFile);
+                bool result = _pathCollection.Delete(imageFilePath);
                 return null;
             }
             return null;
         }
-
-
+        
         public void AddFaceInfo(string imageFile, double[] doubleInfo, int left, int right, int top, int bottom)
         {
             string imageFileLower = imageFile.ToLower();
-            PathInfo faceEncodingInfo = GetFromDB(imageFileLower);
+            FaceInfo faceInfo = GetFromDB(imageFileLower);
             //if (faceEncodingInfo != null)
             //    throw new Exception($"{imageFile} уже есть в базе!");
 
-            if (faceEncodingInfo == null)
-                faceEncodingInfo = new PathInfo(imageFileLower);
+            //if (pathInfo == null)
+            //    pathInfo = new PathInfo(imageFileLower);
 
             FingerAndLocation fingerAndLocation = new FingerAndLocation();
             fingerAndLocation.FingerPrint = doubleInfo;
@@ -114,14 +120,15 @@ namespace FaceRecognitionDataBase
             }
 
             //if (!faceEncodingInfo.FingerAndLocations.Any(fe => fe.Equals(fingerAndLocation)))
-            if (!faceEncodingInfo.FingerAndLocations.Any(fe => fe.Bottom == fingerAndLocation.Bottom
+            if (!faceInfo.FingerAndLocations.Any(fe => fe.Bottom == fingerAndLocation.Bottom
             && fe.Left == fingerAndLocation.Left
             && fe.Right == fingerAndLocation.Right
             && fe.Top == fingerAndLocation.Top
             && fe.FingerPrint.SequenceEqual(fingerAndLocation.FingerPrint)))
-                faceEncodingInfo.FingerAndLocations.Add(fingerAndLocation);
+                faceInfo.FingerAndLocations.Add(fingerAndLocation);
 
-            _pathCollection.Upsert(faceEncodingInfo);
+           // _pathCollection.Upsert(faceInfo);
+            _md5Collection.Upsert(faceInfo);
 
             //var info = _faceCollection.Include(x => x.FingerAndLocations).FindById(imageFile);
             //if (info.FingerAndLocations.First().Left != faceEncodingInfo.FingerAndLocations.First().Left)
@@ -132,17 +139,20 @@ namespace FaceRecognitionDataBase
         {
             string imageFileLower = imageFile.ToLower();
 
-            PathInfo faceEncodingInfo = GetFromDB(imageFileLower);
+            FaceInfo faceEncodingInfo = GetFromDB(imageFileLower);
             if (faceEncodingInfo != null)
                 throw new Exception($"{imageFile} уже есть в базе!");
 
-            faceEncodingInfo = new PathInfo(imageFileLower);
-            _pathCollection.Upsert(faceEncodingInfo);
+            PathInfo pathInfo = new PathInfo(imageFileLower);
+            _pathCollection.Upsert(pathInfo);
+
+            faceEncodingInfo = new FaceInfo(faceEncodingInfo.Md5);
+            _md5Collection.Upsert(faceEncodingInfo);
         }
 
-        public IEnumerable<PathInfo> GetAll()
+        public IEnumerable<FaceInfo> GetAll()
         {
-            return _pathCollection.Include(x => x.FingerAndLocations).FindAll();
+            return _md5Collection.Include(x => x.FingerAndLocations).FindAll();
         }
 
         public int Remove(string path)

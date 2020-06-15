@@ -95,7 +95,7 @@ namespace FaceRecognitionWPF
 
                     //load image
                     //using (var ms = new MemoryStream(File.ReadAllBytes(imageFile3)))
-                    PathInfo founded;
+                    FaceRecognitionBusinessLogic.DataBase.FaceInfo founded;
                     lock (_dbLocker)
                     {
                         founded = _db.GetFromDB(imagePath);

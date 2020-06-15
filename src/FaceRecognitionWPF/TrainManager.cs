@@ -105,7 +105,7 @@ namespace FaceRecognitionWPF
                         _current++;
                     }
 
-                    PathInfo founded;
+                FaceRecognitionBusinessLogic.DataBase.FaceInfo founded;
                     lock (_dbLocker)
                     {
                         founded = _db.GetFromDB(imagePath);
