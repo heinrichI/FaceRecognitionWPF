@@ -1,6 +1,4 @@
-﻿using FaceRecognitionBusinessLogic;
-using FaceRecognitionBusinessLogic.DataBase;
-using LiteDB;
+﻿
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -11,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace FaceRecognitionDataBase
 {
-    public class DataBaseManager : IDataBaseManager
+    public class DataBaseManager2 : IDataBaseManager
     {
         LiteDatabase _pathDb;
         LiteDatabase _md5Db;
@@ -20,7 +18,7 @@ namespace FaceRecognitionDataBase
         LiteCollection<FingerAndLocation> _fingerCollection;
         LiteCollection<FaceInfo> _md5Collection;
 
-        public DataBaseManager(string pathDbName, string md5DbName)
+        public DataBaseManager2(string pathDbName, string md5DbName)
         {
             ////// Re-use mapper from global instance
             var mapper = BsonMapper.Global;

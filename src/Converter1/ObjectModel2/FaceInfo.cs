@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FaceRecognitionBusinessLogic.DataBase
+namespace Converter1.ObjectModel2
 {
     public class FaceInfo
     {
