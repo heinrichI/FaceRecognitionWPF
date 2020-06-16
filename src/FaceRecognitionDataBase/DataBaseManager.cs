@@ -35,6 +35,9 @@ namespace FaceRecognitionDataBase
                  //.DbRef(x => x.NotPerson, "NotPerson")
                 .Id(f => f.Md5);
 
+            mapper.Entity<PathInfo>()
+                .Id(p => p.Path);
+
             _pathDb = new LiteDatabase(pathDbName);
 
             _pathCollection = _pathDb.GetCollection<PathInfo>("Path");
@@ -67,7 +70,7 @@ namespace FaceRecognitionDataBase
                         && fi.LastWriteTime.ToLongDateString() == pathInfo.LastWriteTime.ToLongDateString()
                         && fi.Length == pathInfo.Length)
                     {
-                        var info = _md5Collection.Include(x => x.FingerAndLocations).FindById(pathInfo.Path);
+                        var info = _md5Collection.Include(x => x.FingerAndLocations).FindById(pathInfo.Md5);
 
                         return info;
                     }
@@ -78,7 +81,7 @@ namespace FaceRecognitionDataBase
                 {
                     string md5 = HashHelper.CreateMD5Checksum(imageFilePath);
 
-                    var faceInfo = _md5Collection.FindById(md5);
+                    var faceInfo = _md5Collection.Include(x => x.FingerAndLocations).FindById(md5);
 
                     if (faceInfo != null)
                     {
@@ -116,7 +119,7 @@ namespace FaceRecognitionDataBase
             fingerAndLocation.Top = top;
             fingerAndLocation.Bottom = bottom;
 
-            var fingerAndLocations  = _fingerCollection.Find(f => f.Equals(fingerAndLocation));
+            var fingerAndLocations = _fingerCollection.Find(f => f.Equals(fingerAndLocation));
 
             if (fingerAndLocations.Any())
                 fingerAndLocation.Id = fingerAndLocations.Single().Id;
@@ -138,9 +141,12 @@ namespace FaceRecognitionDataBase
 
             _md5Collection.Insert(faceInfo);
 
+            var info = _md5Collection.Include(x => x.FingerAndLocations).FindById(md5);
+
+
             FileInfo fi = new FileInfo(imageFileLower);
             PathInfo pathInfo = new PathInfo(imageFileLower, md5, fi.Length, fi.LastWriteTime);
-            _pathCollection.Upsert(pathInfo);
+            _pathCollection.Insert(pathInfo);
 
             //var info = _faceCollection.Include(x => x.FingerAndLocations).FindById(imageFile);
             //if (info.FingerAndLocations.First().Left != faceEncodingInfo.FingerAndLocations.First().Left)

@@ -8,10 +8,14 @@ namespace FaceRecognitionBusinessLogic.DataBase
 {
     public class FaceInfo
     {
-        public FaceInfo(string md5)
+        public FaceInfo()
+        {
+            //
+        }
+
+        public FaceInfo(string md5) 
         {
             this.Md5 = md5;
-
             FingerAndLocations = new List<FingerAndLocation>();
         }
 

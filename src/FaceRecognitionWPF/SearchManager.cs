@@ -58,6 +58,9 @@ namespace FaceRecognitionWPF
             _addToViewImageAction = addToViewImageAction;
             _checkClass = checkClass;
 
+            if (_trainedInfo == null || !_trainedInfo.Any())
+                throw new Exception("Empty face training inforamtion!");
+
             _progress.Report(new ProgressPartialResult() { Current = 0, Total = 0, Text = "Read images in directory" });
 
             var ext = new List<string> { ".jpg", ".jpeg", ".png" };

@@ -10,6 +10,11 @@ namespace FaceRecognitionBusinessLogic.DataBase
 {
     public class PathInfo
     {
+        public PathInfo()
+        {
+
+        }
+
         public PathInfo(string path, string md5, long length, DateTime lastWriteTime)
         {
             this.Path = path;
