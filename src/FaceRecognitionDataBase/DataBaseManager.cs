@@ -37,7 +37,7 @@ namespace FaceRecognitionDataBase
 
             _pathDb = new LiteDatabase(pathDbName);
 
-            _pathCollection = _pathDb.GetCollection<PathInfo>("FaceEncodingInfo");
+            _pathCollection = _pathDb.GetCollection<PathInfo>("Path");
             _pathCollection.EnsureIndex(x => x.Path);
 
             _fingerCollection = _pathDb.GetCollection<FingerAndLocation>("FingerAndLocations");
@@ -58,7 +58,7 @@ namespace FaceRecognitionDataBase
             try
             {
                 string imageFileLower = imageFilePath.ToLower();
-                var pathInfo = _pathCollection.FindById(imageFileLower);
+                PathInfo pathInfo = _pathCollection.FindById(imageFileLower);
                 if (pathInfo != null)
                 {
                     var fi = new FileInfo(imageFileLower);
@@ -78,11 +78,17 @@ namespace FaceRecognitionDataBase
                 {
                     string md5 = HashHelper.CreateMD5Checksum(imageFilePath);
 
-                    var info = _md5Collection.Include(x => x.FingerAndLocations).FindById(md5);
+                    var faceInfo = _md5Collection.FindById(md5);
 
-                    _pathCollection.Upsert(pathInfo);
+                    if (faceInfo != null)
+                    {
+                        FileInfo fi = new FileInfo(imageFileLower);
 
-                    return info;
+                        pathInfo = new PathInfo(imageFileLower, md5, fi.Length, fi.LastWriteTime);
+                        _pathCollection.Insert(pathInfo);
+
+                        return faceInfo;
+                    }
                 }
             }
             catch (InvalidCastException ex)
@@ -96,8 +102,8 @@ namespace FaceRecognitionDataBase
         public void AddFaceInfo(string imageFile, double[] doubleInfo, int left, int right, int top, int bottom)
         {
             string imageFileLower = imageFile.ToLower();
-            FaceInfo faceInfo = GetFromDB(imageFileLower);
-            //if (faceEncodingInfo != null)
+            //FaceInfo faceInfo = GetFromDB(imageFileLower);
+            //if (faceInfo != null)
             //    throw new Exception($"{imageFile} уже есть в базе!");
 
             //if (pathInfo == null)
@@ -119,6 +125,9 @@ namespace FaceRecognitionDataBase
                 _fingerCollection.Insert(fingerAndLocation);
             }
 
+            string md5 = HashHelper.CreateMD5Checksum(imageFileLower);
+            FaceInfo faceInfo = new FaceInfo(md5);
+
             //if (!faceEncodingInfo.FingerAndLocations.Any(fe => fe.Equals(fingerAndLocation)))
             if (!faceInfo.FingerAndLocations.Any(fe => fe.Bottom == fingerAndLocation.Bottom
             && fe.Left == fingerAndLocation.Left
@@ -127,8 +136,11 @@ namespace FaceRecognitionDataBase
             && fe.FingerPrint.SequenceEqual(fingerAndLocation.FingerPrint)))
                 faceInfo.FingerAndLocations.Add(fingerAndLocation);
 
-           // _pathCollection.Upsert(faceInfo);
-            _md5Collection.Upsert(faceInfo);
+            _md5Collection.Insert(faceInfo);
+
+            FileInfo fi = new FileInfo(imageFileLower);
+            PathInfo pathInfo = new PathInfo(imageFileLower, md5, fi.Length, fi.LastWriteTime);
+            _pathCollection.Upsert(pathInfo);
 
             //var info = _faceCollection.Include(x => x.FingerAndLocations).FindById(imageFile);
             //if (info.FingerAndLocations.First().Left != faceEncodingInfo.FingerAndLocations.First().Left)
@@ -137,17 +149,18 @@ namespace FaceRecognitionDataBase
 
         public void AddFileWithoutFace(string imageFile)
         {
-            string imageFileLower = imageFile.ToLower();
+            //string imageFileLower = imageFile.ToLower();
 
-            FaceInfo faceEncodingInfo = GetFromDB(imageFileLower);
-            if (faceEncodingInfo != null)
-                throw new Exception($"{imageFile} уже есть в базе!");
+            //FaceInfo faceEncodingInfo = GetFromDB(imageFileLower);
+            //if (faceEncodingInfo != null)
+            //    throw new Exception($"{imageFile} уже есть в базе!");
 
-            PathInfo pathInfo = new PathInfo(imageFileLower);
-            _pathCollection.Upsert(pathInfo);
+            //FileInfo fi = new FileInfo(imageFileLower);
+            //PathInfo pathInfo = new PathInfo(imageFileLower);
+            //_pathCollection.Upsert(pathInfo);
 
-            faceEncodingInfo = new FaceInfo(faceEncodingInfo.Md5);
-            _md5Collection.Upsert(faceEncodingInfo);
+            //faceEncodingInfo = new FaceInfo(faceEncodingInfo.Md5);
+            //_md5Collection.Upsert(faceEncodingInfo);
         }
 
         public IEnumerable<FaceInfo> GetAll()

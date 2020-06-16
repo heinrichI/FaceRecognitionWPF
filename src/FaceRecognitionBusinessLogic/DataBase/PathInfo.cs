@@ -10,14 +10,13 @@ namespace FaceRecognitionBusinessLogic.DataBase
 {
     public class PathInfo
     {
-        public PathInfo(string path)
+        public PathInfo(string path, string md5, long length, DateTime lastWriteTime)
         {
             this.Path = path;
 
-            var fi = new FileInfo(path);
-            Length = fi.Length;
-            LastWriteTime = fi.LastWriteTime;
-            Md5 = HashHelper.CreateMD5Checksum(Path);
+            Length = length;
+            LastWriteTime = lastWriteTime;
+            Md5 = md5;
         }
 
         //[BsonId]
