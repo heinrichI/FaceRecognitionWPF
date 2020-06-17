@@ -1,4 +1,6 @@
 ﻿
+using Converter1.ObjectModel2;
+using LiteDB;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -7,9 +9,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FaceRecognitionDataBase
+namespace Converter1
 {
-    public class DataBaseManager2 : IDataBaseManager
+    public class DataBaseManager2
     {
         LiteDatabase _pathDb;
         LiteDatabase _md5Db;
@@ -155,11 +157,11 @@ namespace FaceRecognitionDataBase
 
             PathInfo pathInfo = _pathCollection.FindById(imageFileLower);
             if (pathInfo != null)
-                throw new Exception($"{imageFile} уже есть в базе path!");
+                return;
 
             FaceInfo faceInfo = _md5Collection.FindById(md5);
             if (faceInfo != null)
-                throw new Exception($"{imageFile} уже есть в базе md5!");
+                return;
 
 
             faceInfo = new FaceInfo(md5);
@@ -175,15 +177,15 @@ namespace FaceRecognitionDataBase
             return _md5Collection.Include(x => x.FingerAndLocations).FindAll();
         }
 
-        public int Remove(string path)
-        {
-            return _pathCollection.Delete((PathInfo info) => info.Path == path);
-        }
+        //public int Remove(string path)
+        //{
+        //    return _pathCollection.Delete((PathInfo info) => info.Path == path);
+        //}
 
-        public bool UpsertFaceInfo(PathInfo info)
-        {
-            return _pathCollection.Upsert(info);
-        }
+        //public bool UpsertFaceInfo(PathInfo info)
+        //{
+        //    return _pathCollection.Upsert(info);
+        //}
 
         public long Shrink()
         {
