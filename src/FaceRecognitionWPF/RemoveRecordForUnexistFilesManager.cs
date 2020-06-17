@@ -8,7 +8,7 @@ using FaceRecognitionBusinessLogic.DataBase;
 
 namespace FaceRecognitionWPF
 {
-    /*class RemoveRecordForUnexistFilesManager
+    class RemoveRecordForUnexistFilesManager
     {
         private IDataBaseManager _db;
         private IProgress<ProgressPartialResult> _progress;
@@ -47,5 +47,5 @@ namespace FaceRecognitionWPF
 
             return $"Removed {removed}, shrinked {shrinked}";
         }
-    }*/
+    }
 }

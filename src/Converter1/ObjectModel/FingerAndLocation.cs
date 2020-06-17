@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Converter1.ObjectModel1
+namespace Converter1.ObjectModel
 {
     public class FingerAndLocation 
     {

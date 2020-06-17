@@ -179,6 +179,12 @@ namespace FaceRecognitionDataBase
 
         public int Remove(string path)
         {
+            string imageFileLower = path.ToLower();
+            var pathInfo = _pathCollection.FindById(imageFileLower);
+            if (pathInfo != null)
+            {
+                _md5Collection.Delete(pathInfo.Md5);
+            }
             return _pathCollection.Delete((PathInfo info) => info.Path == path);
         }
 

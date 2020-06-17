@@ -1,4 +1,5 @@
 ﻿
+using Converter1.ObjectModel;
 using Converter1.ObjectModel2;
 using LiteDB;
 using System;
@@ -101,7 +102,19 @@ namespace Converter1
             }
             return null;
         }
-        
+
+        internal void AddFacesInfo(IEnumerable<FileInfoEx> faceFingerAndLocations)
+        {
+            var faceInfo = faceFingerAndLocations.Select(f => 
+                new FaceInfo(f.Md5) { FingerAndLocations = f.FingerAndLocations });
+
+            _md5Collection.InsertBulk(faceInfo);
+
+            var pathInfo = faceFingerAndLocations.Select(f =>
+               new PathInfo(f.Path, f.Md5, f.Length, f.LastWriteTime));
+            _pathCollection.Insert(pathInfo);
+        }
+
         public void AddFaceInfo(string imageFile, double[] doubleInfo, int left, int right, int top, int bottom)
         {
             string imageFileLower = imageFile.ToLower();
@@ -162,7 +175,6 @@ namespace Converter1
             FaceInfo faceInfo = _md5Collection.FindById(md5);
             if (faceInfo != null)
                 return;
-
 
             faceInfo = new FaceInfo(md5);
             _md5Collection.Insert(faceInfo);
