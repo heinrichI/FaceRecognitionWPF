@@ -24,7 +24,7 @@ namespace FaceRecognitionBusinessLogic.DataBase
 
         void AddFileWithoutFace(string imageFile);
 
-        IEnumerable<FaceInfo> GetAll();
+        IEnumerable<PathInfo> GetAll();
 
         int Remove(string path);
 

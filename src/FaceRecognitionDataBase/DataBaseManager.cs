@@ -172,9 +172,9 @@ namespace FaceRecognitionDataBase
             _pathCollection.Insert(pathInfo);
         }
 
-        public IEnumerable<FaceInfo> GetAll()
+        public IEnumerable<PathInfo> GetAll()
         {
-            return _md5Collection.Include(x => x.FingerAndLocations).FindAll();
+            return _pathCollection.FindAll();
         }
 
         public int Remove(string path)

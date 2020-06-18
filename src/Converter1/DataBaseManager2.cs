@@ -105,14 +105,17 @@ namespace Converter1
 
         internal void AddFacesInfo(IEnumerable<FileInfoEx> faceFingerAndLocations)
         {
-            var faceInfo = faceFingerAndLocations.Select(f => 
-                new FaceInfo(f.Md5) { FingerAndLocations = f.FingerAndLocations });
+            var faceInfo = faceFingerAndLocations
+                .GroupBy(f => f.Md5)
+                .Select(g => g.First())
+                .Select(f => 
+                    new FaceInfo(f.Md5) { FingerAndLocations = f.FingerAndLocations });
 
             _md5Collection.InsertBulk(faceInfo);
 
             var pathInfo = faceFingerAndLocations.Select(f =>
                new PathInfo(f.Path, f.Md5, f.Length, f.LastWriteTime));
-            _pathCollection.Insert(pathInfo);
+            _pathCollection.InsertBulk(pathInfo);
         }
 
         public void AddFaceInfo(string imageFile, double[] doubleInfo, int left, int right, int top, int bottom)

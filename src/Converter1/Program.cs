@@ -51,7 +51,12 @@ namespace Converter1
 
             Console.WriteLine("Compute md5");
             var faceFingerAndLocations = face
-                .Select(f => new FileInfoEx(f));
+                .GroupBy(f => f.Path)
+                .Select(g => new FileInfoEx(g.First())).ToList();
+
+            //var group = faceFingerAndLocations.GroupBy(f => f.Md5);
+            //var duplices = group.Where(x => x.Count() > 1);
+            //Console.WriteLine($"Duplicate: {duplices.Count()}");
 
             Console.WriteLine("Write to db");
             dbNew.AddFacesInfo(faceFingerAndLocations);
