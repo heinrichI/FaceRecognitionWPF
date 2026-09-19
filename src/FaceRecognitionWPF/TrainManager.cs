@@ -59,7 +59,13 @@ namespace FaceRecognitionWPF
 
             StartThreads(threadCount);
 
+            // инвариант: после выхода всех нитей очередь либо распышена, либо ход остановлен
+            Debug.Assert(_cancellationToken.IsCancellationRequested || _searchQueue.Count == 0,
+                "TrainManager: нити завершились с нераспределённой очередью");
+
             _progress.Report(new ProgressPartialResult() { Current = _progressMaximum, Total = _progressMaximum, Text = String.Empty });
+
+            Debug.Assert(_classes != null, "Train: classes == null");
 
             return _classes;
         }

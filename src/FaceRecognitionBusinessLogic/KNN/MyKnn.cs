@@ -11,11 +11,18 @@ namespace FaceRecognitionBusinessLogic.KNN
     {
         public static VoteAndDistance Classify(double[] unknown, List<ClassInfo> trainData, string[] classes, int k)
         {
+            Debug.Assert(unknown != null, "Classify: unknown == null");
+            Debug.Assert(trainData != null && trainData.Any(), "Classify: пустые trainData");
+            Debug.Assert(classes != null && classes.Any(), "Classify: пустые classes");
+            Debug.Assert(trainData.All(ci => ci.Data.Length == unknown.Length),
+                "Classify: разная размерность эмбеддингов (train != unknown)");
+
             if (!classes.Contains(trainData.First().Name))
                 throw new ArgumentException($"В классах нет класа {trainData.First().Name}");
 
             // compute and store distances from unknown to all train data 
             int totalDataItems = trainData.Count;  // number data items
+            Debug.Assert(k >= 1 && k <= totalDataItems, $"Classify: k={k} вне диапазона [1..{totalDataItems}]");
             IndexAndDistance[] info = new IndexAndDistance[totalDataItems];
             //for (int i = 0; i < totalDataItems; ++i)
             //{

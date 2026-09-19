@@ -74,6 +74,10 @@ namespace FaceRecognitionWPF
             _searchQueue = new Queue<string>(searchFiles);
 
             base.StartThreads(threadCount);
+
+            // инвариант: после выхода всех нитей очередь либо распытена, либо ход остановлен
+            Debug.Assert(_cancellationToken.IsCancellationRequested || _searchQueue.Count == 0,
+                "SearchManager: нити завершились с нераспределённой очередью");
         }
 
         protected override void ThreadWork()

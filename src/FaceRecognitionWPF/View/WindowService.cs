@@ -3,6 +3,7 @@ using FaceRecognitionBusinessLogic.ObjectModel;
 using FaceRecognitionWPF.ViewModel;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -30,6 +31,8 @@ namespace FaceRecognitionWPF.View
         public bool? ShowDialogWindow<T>(IClosingViewModel dataContext) where T : Window, new()
         {
             bool? result = null;
+
+            Debug.Assert(_activeWindow != null, "WindowService: ActiveWindow == null");
 
             Window activeWindow = _activeWindow;
             if (activeWindow == null)
@@ -87,6 +90,8 @@ namespace FaceRecognitionWPF.View
 
         public void ShowAboutWindow()
         {
+            Debug.Assert(_activeWindow != null, "WindowService: ActiveWindow == null");
+
             Window activeWindow = _activeWindow;
             if (activeWindow == null)
                 throw new NullReferenceException("ActiveWindow");

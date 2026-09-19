@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Runtime.Serialization;
 using System.Threading;
 
@@ -18,6 +19,8 @@ namespace FaceRecognitionWPF
 
         protected void StartThreads(int threadCount)
         {
+            Debug.Assert(threadCount > 0, "StartThreads: threadCount <= 0");
+
             Thread[] threads = new Thread[threadCount];
 
             for (int i = 0; i < threadCount; i++)

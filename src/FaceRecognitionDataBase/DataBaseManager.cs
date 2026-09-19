@@ -72,6 +72,10 @@ namespace FaceRecognitionDataBase
                     {
                         var info = _md5Collection.Include(x => x.FingerAndLocations).FindById(pathInfo.Md5);
 
+                        // инвариант двух БД: path-запись всегда ссылается на живую md5-запись
+                        Debug.Assert(info != null,
+                            $"Несогласованная БД: path '{imageFileLower}' ссылается на отсутствующий md5 '{pathInfo.Md5}'");
+
                         return info;
                     }
                     else
@@ -145,9 +149,9 @@ namespace FaceRecognitionDataBase
                 _pathCollection.Insert(pathInfo);
             }
 
-            //var info = _faceCollection.Include(x => x.FingerAndLocations).FindById(imageFile);
-            //if (info.FingerAndLocations.First().Left != faceEncodingInfo.FingerAndLocations.First().Left)
-            //    throw new Exception("Данные не сохранились!");
+            // "Данные не сохранились!" — инвариант: после записи обе БД обязаны иметь запись
+            Debug.Assert(_pathCollection.FindById(imageFileLower) != null, $"Path-запись не сохранилась: {imageFileLower}");
+            Debug.Assert(_md5Collection.FindById(md5) != null, $"Md5-запись не сохранилась: {md5}");
         }
 
         public void AddFileWithoutFace(string imageFile)
@@ -169,6 +173,8 @@ namespace FaceRecognitionDataBase
 
             FileInfo fi = new FileInfo(imageFileLower);
             _pathCollection.Insert(new PathInfo(imageFileLower, md5, fi.Length, fi.LastWriteTime));
+
+            Debug.Assert(_pathCollection.FindById(imageFileLower) != null, $"Path-запись не сохранилась: {imageFileLower}");
         }
 
         public IEnumerable<PathInfo> GetAll()
@@ -189,7 +195,11 @@ namespace FaceRecognitionDataBase
                     _md5Collection.Delete(pathInfo.Md5);
                 }
             }
-            return _pathCollection.Delete((PathInfo info) => info.Path == imageFileLower);
+            int removedPaths = _pathCollection.Delete((PathInfo info) => info.Path == imageFileLower);
+
+            Debug.Assert(_pathCollection.FindById(imageFileLower) == null, $"Path-запись не удалена: {imageFileLower}");
+
+            return removedPaths;
         }
 
         public bool UpsertFaceInfo(PathInfo info)
