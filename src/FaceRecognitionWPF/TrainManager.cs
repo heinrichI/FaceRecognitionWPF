@@ -1,32 +1,23 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Runtime.Serialization;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
-using System.Windows;
 using FaceRecognitionBusinessLogic;
 using FaceRecognitionBusinessLogic.DataBase;
 using FaceRecognitionBusinessLogic.KNN;
 using FaceRecognitionBusinessLogic.ObjectModel;
 using FaceRecognitionDotNet;
-using FaceRecognitionWPF.View;
-using FaceRecognitionWPF.ViewModel;
 
 namespace FaceRecognitionWPF
 {
-    class TrainManager 
+    class TrainManager : BaseManager
     {
         static object _searchStackLocker = new object();
         static object _dbLocker = new object();
         static object _progressLocker = new object();
         static object _trainedInfoLocker = new object();
-
-        protected IFormatterConverter _formatterConverter = new FormatterConverter();
-        protected StreamingContext _context = new StreamingContext();
 
         private List<ClassInfo> _trainedInfo;
         IEnumerable<string> _classes;
@@ -34,23 +25,25 @@ namespace FaceRecognitionWPF
         private IConfiguration _configuration;
         private IDataBaseManager _db;
         private IProgress<ProgressPartialResult> _progress;
-        View.WindowService _windowService;
+        private IUiService _uiService;
 
         Queue<string> _searchQueue;
         int _progressMaximum;
         int _current = 0;
 
-        public TrainManager(ref List<ClassInfo> trainedInfo, 
-            IConfiguration configuration, 
-            IDataBaseManager db, 
+        public TrainManager(ref List<ClassInfo> trainedInfo,
+            IConfiguration configuration,
+            IDataBaseManager db,
             IProgress<ProgressPartialResult> progress,
-            View.WindowService windowService)
+            IUiService uiService,
+            CancellationToken cancellationToken)
+            : base(cancellationToken)
         {
             this._trainedInfo = trainedInfo;
             _configuration = configuration;
             this._db = db;
             _progress = progress;
-            _windowService = windowService;
+            _uiService = uiService;
         }
 
         public IEnumerable<string> Train(int threadCount)
@@ -64,145 +57,126 @@ namespace FaceRecognitionWPF
             _progressMaximum = searchFiles.Count();
             _searchQueue = new Queue<string>(searchFiles);
 
-            Thread[] threads = new Thread[threadCount];
-
-            for (int i = 0; i < threadCount; i++)
-            {
-                threads[i] = new Thread(ThreadWork);
-                threads[i].IsBackground = true;
-                threads[i].Priority = ThreadPriority.Lowest;
-                threads[i].Start();
-            }
-
-            for (int i = 0; i < threadCount; i++)
-            {
-                threads[i].Join();
-            }
+            StartThreads(threadCount);
 
             _progress.Report(new ProgressPartialResult() { Current = _progressMaximum, Total = _progressMaximum, Text = String.Empty });
 
             return _classes;
         }
 
-        private void ThreadWork()
+        protected override void ThreadWork()
         {
             string imagePath;
 
             FaceRecognition faceRecognition = null;
-                while (true)
+            while (true)
+            {
+                if (_cancellationToken.IsCancellationRequested)
+                    break;
+
+                lock (_searchStackLocker)
                 {
-                    if (BaseManager.StopRequested)
+                    if (_searchQueue.Count > 0)
+                        imagePath = _searchQueue.Dequeue();
+                    else
                         break;
+                }
 
-                    lock (_searchStackLocker)
-                    {
-                        if (_searchQueue.Count > 0)
-                            imagePath = _searchQueue.Dequeue();
-                        else
-                            break;
-                    }
-
-                    _progress.Report(new ProgressPartialResult() { Current = _current, Total = _progressMaximum, Text = imagePath });
-                    lock (_progressLocker)
-                    {
-                        _current++;
-                    }
+                _progress.Report(new ProgressPartialResult() { Current = _current, Total = _progressMaximum, Text = imagePath });
+                lock (_progressLocker)
+                {
+                    _current++;
+                }
 
                 FaceRecognitionBusinessLogic.DataBase.FaceInfo founded;
-                    lock (_dbLocker)
+                lock (_dbLocker)
+                {
+                    founded = _db.GetFromDB(imagePath);
+                }
+                if (founded == null)
+                {
+                    if (faceRecognition == null)
+                        faceRecognition = FaceRecognition.Create(_configuration.ModelsDirectory);
+
+                    FaceRecognitionDotNet.Image image;
+                    try
                     {
-                        founded = _db.GetFromDB(imagePath);
+                        image = FaceRecognition.LoadImageFile(imagePath);
                     }
-                    if (founded == null)
+                    catch (Exception ex)
                     {
-                        if (faceRecognition == null)
-                         faceRecognition = FaceRecognition.Create(_configuration.ModelsDirectory);
+                        _uiService.ShowMessage($"{ex.Message} \n {ex.StackTrace} \n {ex?.InnerException?.Message}",
+                            "Exception on LoadImageFile");
+                        continue;
+                    }
+                    using (image)
+                    {
+                        Debug.WriteLine($"Train on {imagePath}");
+                        //find face locations
+                        var faceBoundingBoxes = faceRecognition.FaceLocations(image, 1, Model.Hog);
 
-                        FaceRecognitionDotNet.Image image;
-                        try
+                        var countOfFace = faceBoundingBoxes.Count();
+                        if (countOfFace == 0)
                         {
-                            image = FaceRecognition.LoadImageFile(imagePath);
-                        }
-                        catch (Exception ex)
-                        {
-                            MessageBox.Show($"{ex.Message} \n {ex.StackTrace} \n {ex?.InnerException?.Message}",
-                                "Exception on LoadImageFile",
-                                MessageBoxButton.OK, MessageBoxImage.Error);
+                            _uiService.ShowFaceWindow(imagePath, Enumerable.Empty<FaceLocation>());
                             continue;
+                            //throw new Exception($"Not founded face in {imageFile}");
                         }
-                        using (image)
+
+                        if (countOfFace > 1)
                         {
-                            Debug.WriteLine($"Train on {imagePath}");
-                            //find face locations
-                            var faceBoundingBoxes = faceRecognition.FaceLocations(image, 1, Model.Hog);
+                            var boxes = faceBoundingBoxes
+                                .Select(l => new FaceLocation(l.Left, l.Right, l.Top, l.Bottom))
+                                .ToList();
+                            _uiService.ShowFaceWindow(imagePath, boxes);
 
-                            var countOfFace = faceBoundingBoxes.Count();
-                            if (countOfFace == 0)
-                            {
-                                Application.Current.Dispatcher.Invoke(() =>
-                                {
-                                    FaceViewModel vm = new FaceViewModel(imagePath);
-                                    _windowService.ShowDialogWindow<FaceWindow>(vm);
-                                });
+                            continue;
+                            //If there are no people (or too many people) in a training image, skip the image.
+                            //throw new Exception($"Faces {countOfFace} > 1 in {imageFile}");
+                        }
+                        else
+                        {
+                            // Add face encoding for current image to the training set
+                            var encodings = faceRecognition.FaceEncodings(image, faceBoundingBoxes);
+                            if (encodings == null)
                                 continue;
-                                //throw new Exception($"Not founded face in {imageFile}");
-                            }
 
-                            if (countOfFace > 1)
+                            foreach (var encoding in encodings)
                             {
-                                Application.Current.Dispatcher.Invoke(() =>
+                                var info = new System.Runtime.Serialization.SerializationInfo(typeof(double), _formatterConverter);
+                                encoding.GetObjectData(info, _context);
+
+                                double[] doubleInfo = (double[])info.GetValue("_Encoding", typeof(double[]));
+                                encoding.Dispose();
+                                var dir = Path.GetDirectoryName(imagePath);
+                                string directory = new DirectoryInfo(dir).Name;
+                                lock (_trainedInfoLocker)
                                 {
-                                    FaceViewModel vm = new FaceViewModel(faceBoundingBoxes, imagePath);
-                                    _windowService.ShowDialogWindow<FaceWindow>(vm);
-                                });
+                                    _trainedInfo.Add(new ClassInfo(directory, doubleInfo, imagePath));
+                                }
 
-                                continue;
-                                //If there are no people (or too many people) in a training image, skip the image.
-                                //throw new Exception($"Faces {countOfFace} > 1 in {imageFile}");
-                            }
-                            else
-                            {
-                                // Add face encoding for current image to the training set
-                                var encodings = faceRecognition.FaceEncodings(image, faceBoundingBoxes);
-                                if (encodings == null)
-                                    continue;
-
-                                foreach (var encoding in encodings)
+                                lock (_dbLocker)
                                 {
-                                    var info = new SerializationInfo(typeof(double), _formatterConverter);
-                                    encoding.GetObjectData(info, _context);
-
-                                    double[] doubleInfo = (double[])info.GetValue("_Encoding", typeof(double[]));
-                                    encoding.Dispose();
-                                    var dir = Path.GetDirectoryName(imagePath);
-                                    string directory = new DirectoryInfo(dir).Name;
-                                    lock (_trainedInfoLocker)
-                                    {
-                                        _trainedInfo.Add(new ClassInfo(directory, doubleInfo, imagePath));
-                                    }
-
-                                    lock (_dbLocker)
-                                    {
-                                        _db.AddFaceInfo(imagePath, doubleInfo, faceBoundingBoxes.Single().Left, faceBoundingBoxes.Single().Right,
-                                        faceBoundingBoxes.Single().Top, faceBoundingBoxes.Single().Bottom);
-                                    }
+                                    _db.AddFaceInfo(imagePath, doubleInfo, faceBoundingBoxes.Single().Left, faceBoundingBoxes.Single().Right,
+                                    faceBoundingBoxes.Single().Top, faceBoundingBoxes.Single().Bottom);
                                 }
                             }
                         }
                     }
-                    else
+                }
+                else
+                {
+                    Debug.WriteLine($"File {imagePath} in db");
+                    var dir = Path.GetDirectoryName(imagePath);
+                    string directory = new DirectoryInfo(dir).Name;
+                    lock (_trainedInfoLocker)
                     {
-                        Debug.WriteLine($"File {imagePath} in db");
-                        var dir = Path.GetDirectoryName(imagePath);
-                        string directory = new DirectoryInfo(dir).Name;
-                        lock (_trainedInfoLocker)
-                        {
-                            var fingerAndLocation = founded.FingerAndLocations.Single();
-                            _trainedInfo.Add(new ClassInfo(directory,
-                                fingerAndLocation.FingerPrint, imagePath));
-                        }
+                        var fingerAndLocation = founded.FingerAndLocations.Single();
+                        _trainedInfo.Add(new ClassInfo(directory,
+                            fingerAndLocation.FingerPrint, imagePath));
                     }
                 }
+            }
 
             if (faceRecognition != null)
                 faceRecognition.Dispose();

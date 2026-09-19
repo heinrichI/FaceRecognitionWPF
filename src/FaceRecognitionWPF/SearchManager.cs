@@ -10,10 +10,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
-using System.Windows;
 
 namespace FaceRecognitionWPF
 {
@@ -31,6 +28,7 @@ namespace FaceRecognitionWPF
 
         IDataBaseManager _db;
         IConfiguration _configuration;
+        IUiService _uiService;
         List<ClassInfo> _trainedInfo;
         IEnumerable<string> _classes;
         ObservableCollection<DirectoryWithFaces> _directoryWithFaces;
@@ -47,11 +45,15 @@ namespace FaceRecognitionWPF
             ObservableCollection<DirectoryWithFaces> directoryWithFaces,
             Action<string, ObservableCollection<DirectoryWithFaces>, 
                 VoteAndDistance, int, int, int, int, int> addToViewImageAction,
-            string checkClass = null)
+            string checkClass,
+            CancellationToken cancellationToken,
+            IUiService uiService)
+            : base(cancellationToken)
         {
             _progress = progress;
             _db = db;
             _configuration = configuration;
+            _uiService = uiService;
             _trainedInfo = trainedInfo;
             _classes = classes;
             _directoryWithFaces = directoryWithFaces;
@@ -82,7 +84,7 @@ namespace FaceRecognitionWPF
             {
                 while (true)
                 {
-                    if (StopRequested)
+                    if (_cancellationToken.IsCancellationRequested)
                         return;
 
                     lock (_searchQueueLocker)
@@ -116,8 +118,7 @@ namespace FaceRecognitionWPF
                         }
                         catch (Exception ex)
                         {
-                            MessageBox.Show($"{ex.Message} \n {ex.StackTrace} \n {ex?.InnerException?.Message}", "Uncaught Thread Exception",
-                                MessageBoxButton.OK, MessageBoxImage.Error);
+                            _uiService.ShowMessage($"{ex.Message} \n {ex.StackTrace} \n {ex?.InnerException?.Message}", "Uncaught Thread Exception");
                             continue;
                         }
                         using (unknownImage)

@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+using System;
 using System.Runtime.Serialization;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace FaceRecognitionWPF
 {
@@ -13,10 +9,14 @@ namespace FaceRecognitionWPF
         protected IFormatterConverter _formatterConverter = new FormatterConverter();
         protected StreamingContext _context = new StreamingContext();
 
-        public static volatile bool StopRequested;
-        public static void RequestStop() { StopRequested = true; }
+        protected readonly CancellationToken _cancellationToken;
 
-        public void StartThreads(int threadCount)
+        protected BaseManager(CancellationToken cancellationToken)
+        {
+            _cancellationToken = cancellationToken;
+        }
+
+        protected void StartThreads(int threadCount)
         {
             Thread[] threads = new Thread[threadCount];
 

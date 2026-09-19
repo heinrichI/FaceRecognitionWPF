@@ -218,6 +218,8 @@ namespace FaceRecognitionWPF.ViewModel
             get { return this.IsRunning ? "Stop" : "Run search"; }
         }
 
+        private CancellationTokenSource _runCts;
+
         private RelayCommand _runCommand;
         public RelayCommand RunCommand
         {
@@ -227,37 +229,40 @@ namespace FaceRecognitionWPF.ViewModel
                 {
                     if (this.IsRunning)
                     {
-                        BaseManager.RequestStop();
+                        _runCts?.Cancel();
                         return;
                     }
 
                     this.IsRunning = true;
-                    BaseManager.StopRequested = false;
                     SettingExpanded = false;
 
                     try
                     {
+                        _runCts = new CancellationTokenSource();
+                        CancellationToken runToken = _runCts.Token;
+
                         await Task.Run(() =>
                         {
                             using (var db = GetDB())
                             {
-                                if (!BaseManager.StopRequested && (_trainedInfo == null || !_trainedInfo.Any()))
+                                if (!runToken.IsCancellationRequested && (_trainedInfo == null || !_trainedInfo.Any()))
                                 {
                                     TrainManager trainManager = new TrainManager(ref _trainedInfo,
-                                        _configuration, db, _progress, _windowService);
+                                        _configuration, db, _progress, _windowService, runToken);
                                     Classes = trainManager.Train(_configuration.ThreadCount);
                                 }
 
-                                if (!BaseManager.StopRequested && _trainedInfo != null && _trainedInfo.Any())
+                                if (!runToken.IsCancellationRequested && _trainedInfo != null && _trainedInfo.Any())
                                 {
                                     SearchManager sm = new SearchManager(_configuration.ThreadCount, _configuration, _progress,
                                         db, _trainedInfo, _classes,
-                                        DirectoriesWithFaces, AddToViewImage, CheckClass);
+                                        DirectoriesWithFaces, AddToViewImage, CheckClass,
+                                        runToken, _windowService);
                                 }
                             }
                         });
 
-                        if (BaseManager.StopRequested)
+                        if (runToken.IsCancellationRequested)
                         {
                             ProgressVisible = Visibility.Collapsed;
                             MessageBox.Show("Stopped.");
@@ -275,6 +280,8 @@ namespace FaceRecognitionWPF.ViewModel
                     finally
                     {
                         this.IsRunning = false;
+                        _runCts?.Dispose();
+                        _runCts = null;
                     }
                 }, (arg) => true));
             }
@@ -483,13 +490,14 @@ namespace FaceRecognitionWPF.ViewModel
                             if (_trainedInfo == null || !_trainedInfo.Any())
                             {
                                 TrainManager trainManager = new TrainManager(ref _trainedInfo,
-                                    _configuration, db, _progress, _windowService);
+                                    _configuration, db, _progress, _windowService, CancellationToken.None);
                                 Classes = trainManager.Train(_configuration.ThreadCount);
                             }
 
                             SearchManager sm = new SearchManager(_configuration.ThreadCount, _configuration, _progress,
                                 db, _trainedInfo, _classes,
-                                DirectoriesWithFaces, AddToViewImage, CheckClass);
+                                DirectoriesWithFaces, AddToViewImage, CheckClass,
+                                CancellationToken.None, _windowService);
                         }
                         MessageBox.Show("Done!");
                     });
@@ -524,7 +532,7 @@ namespace FaceRecognitionWPF.ViewModel
                             if (_trainedInfo == null || !_trainedInfo.Any())
                             {
                                 TrainManager trainManager = new TrainManager(ref _trainedInfo,
-                                    _configuration, db, _progress, _windowService);
+                                    _configuration, db, _progress, _windowService, CancellationToken.None);
                                 Classes = trainManager.Train(_configuration.ThreadCount);
                             }
                         }

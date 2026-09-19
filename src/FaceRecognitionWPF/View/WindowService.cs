@@ -1,4 +1,6 @@
-﻿using FaceRecognitionWPF.ViewModel;
+﻿using FaceRecognitionBusinessLogic;
+using FaceRecognitionBusinessLogic.ObjectModel;
+using FaceRecognitionWPF.ViewModel;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,7 +10,7 @@ using System.Windows;
 
 namespace FaceRecognitionWPF.View
 {
-    class WindowService 
+    class WindowService : IUiService
     {
         private Window _activeWindow;
 
@@ -46,6 +48,40 @@ namespace FaceRecognitionWPF.View
             ApplyEffect(view.Owner);
             result = view.ShowDialog();
             ClearEffect(view.Owner);
+            return result;
+        }
+
+        public void ShowMessage(string message, string caption)
+        {
+            var dispatcher = Application.Current?.Dispatcher;
+            if (dispatcher == null)
+                return;
+
+            Action show = () => MessageBox.Show(message, caption, MessageBoxButton.OK, MessageBoxImage.Error);
+            if (dispatcher.CheckAccess())
+                show();
+            else
+                dispatcher.Invoke(show);
+        }
+
+        public bool? ShowFaceWindow(string imagePath, IEnumerable<FaceLocation> faceLocations)
+        {
+            bool? result = null;
+            var dispatcher = Application.Current?.Dispatcher;
+            if (dispatcher == null)
+                return null;
+
+            Action show = () =>
+            {
+                var vm = new FaceViewModel(faceLocations, imagePath);
+                result = ShowDialogWindow<FaceWindow>(vm);
+            };
+
+            if (dispatcher.CheckAccess())
+                show();
+            else
+                dispatcher.Invoke(show);
+
             return result;
         }
 

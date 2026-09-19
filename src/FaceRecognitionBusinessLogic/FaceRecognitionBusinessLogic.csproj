@@ -67,7 +67,6 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="PresentationCore" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -84,6 +83,7 @@
     <Compile Include="DataBase\FingerAndLocation.cs" />
     <Compile Include="DataBase\IDataBaseManager.cs" />
     <Compile Include="IConfiguration.cs" />
+    <Compile Include="IUiService.cs" />
     <Compile Include="KNN\ClassInfo.cs" />
     <Compile Include="KNN\IndexAndDistance.cs" />
     <Compile Include="KNN\KNN.cs" />

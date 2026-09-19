@@ -4,18 +4,16 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.Windows.Media;
 using System.Xml.Serialization;
 
 namespace FaceRecognitionBusinessLogic.ObjectModel
 {
     public class FaceInfo : BasePropertyChanged
     {
-        [NonSerialized]
+        // Ядро не зависит от WPF: в WPF-слое сюда кладут ImageSource (обёртка-DTO).
+        object _image;
         [XmlIgnoreAttribute]
-        ImageSource _image;
-        [XmlIgnoreAttribute]
-        public ImageSource Image
+        public object Image
         {
             get => this._image;
             set
