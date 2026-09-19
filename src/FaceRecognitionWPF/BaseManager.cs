@@ -13,6 +13,9 @@ namespace FaceRecognitionWPF
         protected IFormatterConverter _formatterConverter = new FormatterConverter();
         protected StreamingContext _context = new StreamingContext();
 
+        public static volatile bool StopRequested;
+        public static void RequestStop() { StopRequested = true; }
+
         public void StartThreads(int threadCount)
         {
             Thread[] threads = new Thread[threadCount];

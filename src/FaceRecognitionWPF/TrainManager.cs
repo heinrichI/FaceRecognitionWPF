@@ -91,6 +91,9 @@ namespace FaceRecognitionWPF
             FaceRecognition faceRecognition = null;
                 while (true)
                 {
+                    if (BaseManager.StopRequested)
+                        break;
+
                     lock (_searchStackLocker)
                     {
                         if (_searchQueue.Count > 0)

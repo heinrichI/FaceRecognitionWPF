@@ -157,19 +157,18 @@ namespace FaceRecognitionDataBase
 
             PathInfo pathInfo = _pathCollection.FindById(imageFileLower);
             if (pathInfo != null)
-                throw new Exception($"{imageFile} уже есть в базе path!");
+                return; // путь уже учтён в базе
 
             FaceInfo faceInfo = _md5Collection.FindById(md5);
-            if (faceInfo != null)
-                throw new Exception($"{imageFile} уже есть в базе md5!");
-
-
-            faceInfo = new FaceInfo(md5);
-            _md5Collection.Insert(faceInfo);
+            if (faceInfo == null)
+            {
+                // содержимое не встречалось — фиксируем запись "лиц не найдено"
+                _md5Collection.Insert(new FaceInfo(md5));
+            }
+            // если md5 уже известен (копия/перенос файла) — просто добавляем ссылку на него
 
             FileInfo fi = new FileInfo(imageFileLower);
-            pathInfo = new PathInfo(imageFileLower, md5, fi.Length, fi.LastWriteTime);
-            _pathCollection.Insert(pathInfo);
+            _pathCollection.Insert(new PathInfo(imageFileLower, md5, fi.Length, fi.LastWriteTime));
         }
 
         public IEnumerable<PathInfo> GetAll()
@@ -183,9 +182,14 @@ namespace FaceRecognitionDataBase
             var pathInfo = _pathCollection.FindById(imageFileLower);
             if (pathInfo != null)
             {
-                _md5Collection.Delete(pathInfo.Md5);
+                // удаляем md5-запись только если на то же содержимое не ссылается другой путь (копия)
+                bool sharedMd5 = _pathCollection.Find(info => info.Md5 == pathInfo.Md5 && info.Path != imageFileLower).Any();
+                if (!sharedMd5)
+                {
+                    _md5Collection.Delete(pathInfo.Md5);
+                }
             }
-            return _pathCollection.Delete((PathInfo info) => info.Path == path);
+            return _pathCollection.Delete((PathInfo info) => info.Path == imageFileLower);
         }
 
         public bool UpsertFaceInfo(PathInfo info)

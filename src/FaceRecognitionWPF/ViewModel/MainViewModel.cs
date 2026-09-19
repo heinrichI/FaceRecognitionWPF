@@ -201,6 +201,23 @@ namespace FaceRecognitionWPF.ViewModel
         }
         
 
+        private bool _isRunning;
+        public bool IsRunning
+        {
+            get { return this._isRunning; }
+            private set
+            {
+                this._isRunning = value;
+                this.OnPropertyChanged();
+                this.OnPropertyChanged("RunButtonText");
+            }
+        }
+
+        public string RunButtonText
+        {
+            get { return this.IsRunning ? "Stop" : "Run search"; }
+        }
+
         private RelayCommand _runCommand;
         public RelayCommand RunCommand
         {
@@ -208,10 +225,14 @@ namespace FaceRecognitionWPF.ViewModel
             {
                 return this._runCommand ?? (this._runCommand = new RelayCommand(async (arg) =>
                 {
-                    //IProgress<int> progress = new Progress<int>(percent =>
-                    //{
-                    //    Progress = percent;
-                    //});
+                    if (this.IsRunning)
+                    {
+                        BaseManager.RequestStop();
+                        return;
+                    }
+
+                    this.IsRunning = true;
+                    BaseManager.StopRequested = false;
                     SettingExpanded = false;
 
                     try
@@ -220,36 +241,40 @@ namespace FaceRecognitionWPF.ViewModel
                         {
                             using (var db = GetDB())
                             {
-                                if (_trainedInfo == null || !_trainedInfo.Any())
+                                if (!BaseManager.StopRequested && (_trainedInfo == null || !_trainedInfo.Any()))
                                 {
                                     TrainManager trainManager = new TrainManager(ref _trainedInfo,
                                         _configuration, db, _progress, _windowService);
                                     Classes = trainManager.Train(_configuration.ThreadCount);
                                 }
 
-                                SearchManager sm = new SearchManager(_configuration.ThreadCount, _configuration, _progress,
-                                    db, _trainedInfo, _classes,
-                                    DirectoriesWithFaces, AddToViewImage, CheckClass);
+                                if (!BaseManager.StopRequested && _trainedInfo != null && _trainedInfo.Any())
+                                {
+                                    SearchManager sm = new SearchManager(_configuration.ThreadCount, _configuration, _progress,
+                                        db, _trainedInfo, _classes,
+                                        DirectoriesWithFaces, AddToViewImage, CheckClass);
+                                }
                             }
-
-
-
-                            MessageBox.Show("Done!");
                         });
-                        //.ContinueWith(c =>
-                        //{
-                        //    AggregateException exception = c.Exception;
 
-                        //    System.Windows.MessageBox.Show($"{exception.Message} \n {exception.StackTrace}",
-                        //        "Uncaught Thread Exception", System.Windows.MessageBoxButton.OK,
-                        //        System.Windows.MessageBoxImage.Error);
-                        //}, TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously);
-
+                        if (BaseManager.StopRequested)
+                        {
+                            ProgressVisible = Visibility.Collapsed;
+                            MessageBox.Show("Stopped.");
+                        }
+                        else
+                        {
+                            MessageBox.Show("Done!");
+                        }
                     }
                     catch (Exception ex)
                     {
 
                         throw;
+                    }
+                    finally
+                    {
+                        this.IsRunning = false;
                     }
                 }, (arg) => true));
             }

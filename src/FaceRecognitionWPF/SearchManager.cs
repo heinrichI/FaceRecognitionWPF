@@ -82,6 +82,9 @@ namespace FaceRecognitionWPF
             {
                 while (true)
                 {
+                    if (StopRequested)
+                        return;
+
                     lock (_searchQueueLocker)
                     {
                         if (_searchQueue.Count > 0)

@@ -12,9 +12,12 @@
 <DockPanel>
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="Data base">
+                <!-- TODO: портировать CheckManager и ConvertToLowerCaseManager на path/md5 схему, затем снять IsEnabled="False" -->
                 <MenuItem Header="Check data base"
+                          IsEnabled="False"
                           Command="{Binding CheckDataBaseCommand}" />
                 <MenuItem Header="Convert to lower case"
+                          IsEnabled="False"
                           Command="{Binding ConvertToLowerCaseCommand}" />
                 <MenuItem Header="Remove record for unexist files"
                           Command="{Binding RemoveRecordForUnexistFilesCommand}" />
@@ -57,7 +60,7 @@
                 <TextBox Text="{Binding Configuration.DistanceThreshold, UpdateSourceTrigger=PropertyChanged}"></TextBox>
                 <Label>Search or check path</Label>
                 <TextBox Text="{Binding Configuration.SearchPath, UpdateSourceTrigger=PropertyChanged}"></TextBox>
-                <Button Command="{Binding RunCommand}">Run search</Button>
+                <Button Command="{Binding RunCommand}" Content="{Binding RunButtonText}"/>
                 <GroupBox Header="Check">
                     <StackPanel>
                         <Button Command="{Binding ShowAnotherClassAndDistanceMoreThanCommand}">Show another class and distance more than</Button>
